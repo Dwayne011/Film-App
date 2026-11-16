@@ -1,0 +1,473 @@
+<title>Film Wheel</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: one-screen app. Frosted Material panels float over a studio-light backdrop; the wheel is the hero. */
+:root{
+  color-scheme:dark;
+  --bg:#0a0e2c; --bg-2:#1b1460;
+  --glow-a:#3d5afe; --glow-b:#c51bff; --glow-c:#ffb300;
+  --glass:rgba(255,255,255,.09); --glass-strong:rgba(255,255,255,.16); --glass-line:rgba(255,255,255,.22);
+  --sheet:rgba(24,26,66,.72);
+  --fg:#f4f5ff; --fg-dim:rgba(244,245,255,.68); --fg-faint:rgba(244,245,255,.4);
+  --gold:#ffc940; --primary:#93a4ff; --on-gold:#2a1c00; --danger:#ff7a8a;
+  --seen-a:#353a55; --seen-b:#40465f;
+  --font:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:20px;
+}
+html,body{height:100%}
+body{
+  background:var(--bg); color:var(--fg); font-family:var(--font); font-size:15px; line-height:1.4;
+  overflow:hidden; -webkit-tap-highlight-color:transparent;
+}
+body::after{ /* studio lights behind the glass */
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(60vmax 50vmax at 12% 8%, color-mix(in srgb,var(--glow-a) 60%,transparent), transparent 62%),
+    radial-gradient(55vmax 45vmax at 95% 30%, color-mix(in srgb,var(--glow-b) 46%,transparent), transparent 60%),
+    radial-gradient(50vmax 40vmax at 40% 105%, color-mix(in srgb,var(--glow-c) 34%,transparent), transparent 60%),
+    linear-gradient(160deg,var(--bg),var(--bg-2));
+}
+*,*::before,*::after{box-sizing:border-box}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.glass{
+  background:var(--glass); border:1px solid var(--glass-line); border-radius:var(--r);
+  -webkit-backdrop-filter:blur(22px) saturate(160%); backdrop-filter:blur(22px) saturate(160%);
+  box-shadow:0 8px 32px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.18);
+}
+.app{
+  height:100%; max-width:520px; margin:0 auto; display:flex; flex-direction:column; gap:12px;
+  padding-block:12px;
+  padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+/* App bar */
+.bar{display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px}
+.bar h1{font-size:20px;font-weight:900;letter-spacing:.2px;margin:0;line-height:1.1}
+.bar .sub{font-size:12.5px;color:var(--fg-dim);font-variant-numeric:tabular-nums}
+.bar .grow{flex:1;min-width:0}
+.icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--glass)}
+.icon-btn svg{width:22px;height:22px;fill:currentColor}
+.badge{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:var(--glass-strong);color:var(--gold)}
+/* Views */
+.view{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
+/* Tonight card */
+.tonight{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 16px}
+.tonight .grow{flex:1;min-width:0}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--gold)}
+.tonight .t{font-size:16px;font-weight:700;overflow-wrap:anywhere}
+/* Wheel */
+.stage{flex:1;min-height:0;display:grid;place-items:center;container-type:size}
+.wheelbox{position:relative;width:min(100cqw,100cqh);aspect-ratio:1;max-width:100%}
+.rim{position:absolute;inset:0;border-radius:50%;
+  box-shadow:0 0 0 5px rgba(255,255,255,.14),0 0 0 6px var(--glass-line),0 0 60px color-mix(in srgb,var(--glow-a) 70%,transparent),0 18px 50px rgba(0,0,0,.5)}
+#wheel{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;will-change:transform}
+.pointer{position:absolute;left:50%;top:-10px;width:30px;height:38px;transform:translateX(-50%);z-index:3;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+.pointer svg{width:100%;height:100%;display:block}
+.hub{position:absolute;left:50%;top:50%;width:44%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;z-index:2;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;
+  background:var(--glass-strong);border:1px solid var(--glass-line);
+  -webkit-backdrop-filter:blur(18px) saturate(170%);backdrop-filter:blur(18px) saturate(170%);
+  box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.3)}
+.hub .num{font-size:clamp(34px,15cqw,68px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.hub .cap{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--fg-dim)}
+.hub.seen .num{color:var(--fg-faint)}
+/* Buttons */
+.btn{min-height:52px;padding:0 22px;border-radius:99px;font-weight:700;font-size:15px;letter-spacing:.6px;text-transform:uppercase;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:linear-gradient(180deg,#ffd866,var(--gold));color:var(--on-gold);box-shadow:0 8px 24px color-mix(in srgb,var(--gold) 40%,transparent),inset 0 1px 0 rgba(255,255,255,.6)}
+.btn.tonal{background:var(--glass-strong);border:1px solid var(--glass-line)}
+.btn.text{min-height:44px;padding:0 14px;color:var(--primary);text-transform:none;letter-spacing:.2px;font-weight:500}
+.btn.text.danger{color:var(--danger)}
+.btn.small{min-height:40px;padding:0 16px;font-size:13px}
+.btn[disabled]{opacity:.45;cursor:default;box-shadow:none}
+.btn.block{width:100%}
+/* Bottom nav */
+.nav{display:grid;grid-template-columns:1fr 1fr;padding:6px}
+.nav button{min-height:52px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:500;color:var(--fg-dim)}
+.nav button svg{width:24px;height:24px;fill:currentColor}
+.nav button[aria-selected="true"]{background:var(--glass-strong);color:var(--fg)}
+/* Film rows */
+.listwrap{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
+.filters{display:flex;gap:8px;padding:12px 12px 8px;flex-wrap:wrap}
+.chip{min-height:36px;padding:0 14px;border-radius:99px;border:1px solid var(--glass-line);font-size:13px;font-weight:500;color:var(--fg-dim)}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:transparent}
+.rows{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 6px 8px;margin:0;list-style:none}
+.row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;text-align:left;
+  min-height:56px;padding:8px 10px;border-radius:14px}
+.row .n{font-weight:900;font-size:17px;text-align:right;font-variant-numeric:tabular-nums;color:var(--gold)}
+.row .ti{font-weight:500;overflow-wrap:anywhere}
+.row .yr{font-size:12.5px;color:var(--fg-dim)}
+.row .meta{font-size:12px;color:var(--fg-faint);text-align:right}
+.row.seen .n,.row.seen .ti{color:var(--fg-faint)}
+.row.seen .yr{color:var(--fg-faint)}
+.row.now{background:var(--glass-strong)}
+button.row:active{background:var(--glass)}
+/* Stars */
+.stars{display:inline-flex;gap:1px;line-height:1;white-space:nowrap}
+.stars .s{position:relative;display:inline-block;color:rgba(255,255,255,.2)}
+.stars .s i{position:absolute;left:0;top:0;overflow:hidden;color:var(--gold);font-style:normal}
+.row .stars{font-size:15px}
+/* Reveal overlay */
+.overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
+  background:rgba(4,5,18,.82);-webkit-backdrop-filter:blur(26px);backdrop-filter:blur(26px);
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.overlay .inner{flex:1;min-height:0;width:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.rv-head{padding:16px 0 8px;text-align:center}
+.rv-head .big{font-size:22px;font-weight:900}
+.rv-scroll{flex:1;min-height:0;overflow:hidden;position:relative;
+  -webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+.rv-scroll.done{overflow-y:auto}
+.rv-scroll ul{list-style:none;margin:0;padding:45vh 0}
+.rv-scroll .row{transition:opacity .5s,background .5s,transform .5s}
+.rv-scroll.done .row{opacity:.22}
+.rv-scroll.done .row.cand{opacity:.75}
+.rv-scroll.done .row.landed{opacity:1;background:var(--glass-strong);box-shadow:inset 0 0 0 2px var(--gold);transform:scale(1.02)}
+.rv-pick{padding:14px;margin:8px 0 12px;display:flex;flex-direction:column;gap:8px}
+.opt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;width:100%;
+  min-height:56px;padding:8px 14px;border-radius:16px;background:var(--glass);border:1px solid var(--glass-line)}
+.opt .k{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--fg-dim)}
+.opt .ti{font-weight:700;overflow-wrap:anywhere}
+.opt.main{background:linear-gradient(180deg,#ffd866,var(--gold));color:var(--on-gold);border-color:transparent}
+.opt.main .k{color:rgba(42,28,0,.7)}
+.opt[disabled]{opacity:.5;cursor:default}
+.opt .go{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+/* Sheet / dialog */
+.scrim{position:fixed;inset:0;z-index:30;background:rgba(4,5,18,.55);display:flex;align-items:flex-end;justify-content:center;
+  padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+.sheet{width:100%;max-width:488px;padding:22px 18px 16px;display:flex;flex-direction:column;gap:14px;text-align:center;background:var(--sheet);border-radius:28px}
+.sheet h2{margin:0;font-size:21px;font-weight:900;text-wrap:balance;overflow-wrap:anywhere}
+.sheet p{margin:0;color:var(--fg-dim)}
+.sheet .actions{display:flex;flex-direction:column;gap:6px}
+.rate{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0}
+.rate .stars{font-size:clamp(40px,13vw,54px);touch-action:none;cursor:pointer;gap:2px;border-radius:12px;padding:2px 6px}
+.rate .val{font-size:14px;font-weight:700;color:var(--fg-dim);font-variant-numeric:tabular-nums;min-height:20px}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;
+  padding:10px 16px;border-radius:99px;font-weight:500;font-size:13.5px;background:var(--sheet);width:max-content;max-width:calc(100% - 32px);text-align:center}
+@media (prefers-reduced-motion:reduce){.rv-scroll .row{transition:none}}
+</style>
+
+<div class="app">
+  <header class="bar glass">
+    <div class="grow">
+      <h1>Film Wheel</h1>
+      <div class="sub" id="stats"></div>
+    </div>
+    <span class="badge">Mockup</span>
+    <button class="icon-btn" id="mute" aria-label="Mute sound" aria-pressed="false"></button>
+  </header>
+
+  <section class="view" id="view-wheel">
+    <div class="tonight glass" id="tonight" hidden>
+      <div class="grow">
+        <div class="eyebrow">Tonight's film</div>
+        <div class="t" id="tonight-title"></div>
+      </div>
+      <button class="btn primary small" id="tonight-rate">Rate it</button>
+    </div>
+    <div class="stage">
+      <div class="wheelbox">
+        <div class="rim"></div>
+        <canvas id="wheel" aria-hidden="true"></canvas>
+        <div class="pointer" aria-hidden="true"><svg viewBox="0 0 30 38"><path d="M15 37 L2 8 A13 13 0 0 1 28 8 Z" fill="#ffc940" stroke="#fff3c4" stroke-width="1.5"/><circle cx="15" cy="11" r="4" fill="#2a1c00"/></svg></div>
+        <div class="hub" id="hub" aria-live="polite">
+          <div class="num" id="hub-num">100</div>
+          <div class="cap" id="hub-cap">films</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn primary block" id="spin">Spin the wheel</button>
+  </section>
+
+  <section class="view" id="view-list" hidden>
+    <div class="listwrap glass">
+      <div class="filters" role="group" aria-label="Filter films">
+        <button class="chip" data-f="all" aria-pressed="true">All 100</button>
+        <button class="chip" data-f="todo" aria-pressed="false">To watch</button>
+        <button class="chip" data-f="seen" aria-pressed="false">Watched</button>
+      </div>
+      <ul class="rows" id="rows"></ul>
+    </div>
+  </section>
+
+  <nav class="nav glass" role="tablist">
+    <button role="tab" id="tab-wheel" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 2.07A8 8 0 0 1 19.93 11H14.8a3 3 0 0 0-1.8-1.8V4.07zM11 4.07V9.2A3 3 0 0 0 9.2 11H4.07A8 8 0 0 1 11 4.07zM4.07 13H9.2a3 3 0 0 0 1.8 1.8v5.13A8 8 0 0 1 4.07 13zM13 19.93V14.8a3 3 0 0 0 1.8-1.8h5.13A8 8 0 0 1 13 19.93z"/></svg>Wheel</button>
+    <button role="tab" id="tab-list" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 5h2v2H3V5zm4 0h14v2H7V5zM3 11h2v2H3v-2zm4 0h14v2H7v-2zm-4 6h2v2H3v-2zm4 0h14v2H7v-2z"/></svg>The 100</button>
+  </nav>
+</div>
+
+<div class="overlay" id="reveal" hidden>
+  <div class="inner">
+    <div class="rv-head">
+      <div class="eyebrow" id="rv-eyebrow">The wheel has spoken</div>
+      <div class="big" id="rv-big"></div>
+    </div>
+    <div class="rv-scroll" id="rv-scroll"><ul id="rv-rows"></ul></div>
+    <div class="rv-pick glass" id="rv-pick" hidden></div>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden><div class="sheet glass" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div class="toast glass" id="toast" hidden></div>
+
+<script>
+(() => {
+"use strict";
+const FILMS = [["Parasite",2019],["Mulholland Drive",2001],["There Will Be Blood",2007],["In the Mood for Love",2000],["Moonlight",2016],["No Country for Old Men",2007],["Eternal Sunshine of the Spotless Mind",2004],["Get Out",2017],["Spirited Away",2001],["The Social Network",2010],["Mad Max: Fury Road",2015],["The Zone of Interest",2023],["Children of Men",2006],["Inglourious Basterds",2009],["City of God",2002],["Crouching Tiger, Hidden Dragon",2000],["Brokeback Mountain",2005],["Y Tu Mamá También",2001],["Zodiac",2007],["The Wolf of Wall Street",2013],["The Royal Tenenbaums",2001],["The Grand Budapest Hotel",2014],["Boyhood",2014],["Her",2013],["Phantom Thread",2017],["Anatomy of a Fall",2023],["Adaptation",2002],["The Dark Knight",2008],["Arrival",2016],["Lost in Translation",2003],["The Departed",2006],["Bridesmaids",2011],["A Separation",2011],["WALL·E",2008],["A Prophet",2009],["A Serious Man",2009],["Call Me by Your Name",2017],["Portrait of a Lady on Fire",2019],["Lady Bird",2017],["Yi Yi",2000],["Amélie",2001],["The Master",2012],["Oldboy",2003],["Once Upon a Time… in Hollywood",2019],["Moneyball",2011],["Roma",2018],["Almost Famous",2000],["The Lives of Others",2006],["Before Sunset",2004],["Up",2009],["12 Years a Slave",2013],["The Favourite",2018],["Borat",2006],["Pan’s Labyrinth",2006],["Inception",2010],["Punch-Drunk Love",2002],["Best in Show",2000],["Uncut Gems",2019],["Toni Erdmann",2016],["Whiplash",2014],["Kill Bill: Vol. 1",2003],["Memento",2000],["Little Miss Sunshine",2006],["Gone Girl",2014],["Oppenheimer",2023],["Spotlight",2015],["Tár",2022],["The Hurt Locker",2008],["Under the Skin",2013],["Let the Right One In",2008],["Ocean’s Eleven",2001],["Carol",2015],["Ratatouille",2007],["The Florida Project",2017],["Amour",2012],["O Brother, Where Art Thou?",2000],["Everything Everywhere All at Once",2022],["Aftersun",2022],["The Tree of Life",2011],["Volver",2006],["Black Swan",2010],["The Act of Killing",2012],["Inside Llewyn Davis",2013],["Melancholia",2011],["Anchorman: The Legend of Ron Burgundy",2004],["Past Lives",2023],["The Lord of the Rings: The Fellowship of the Ring",2001],["The Gleaners and I",2000],["Interstellar",2014],["Frances Ha",2012],["Fish Tank",2009],["Gladiator",2000],["Michael Clayton",2007],["Minority Report",2002],["The Worst Person in the World",2021],["Black Panther",2018],["Gravity",2013],["Grizzly Man",2005],["Memories of Murder",2003],["Superbad",2007]];
+// Your ratings so far. null = watched, no rating given yet.
+const SEED = {1:5,5:3,6:4.5,8:4,10:null,11:null,17:2.5,18:4,20:null,21:3,22:3.5,24:null,28:4.5,32:2.5,34:3.5,38:3.5,43:4,46:4,48:4,49:3,53:2,54:3,55:null,56:2,57:2,64:null,72:2.5,82:1.5,85:2,89:4.5,93:3,96:null,97:1,99:4.5};
+const KEY = "filmwheel.mock.v1", SEG = 3.6, FALLBACK_SPIN = 24.42, TURNS = 10;
+const $ = id => document.getElementById(id);
+const title = n => FILMS[n-1][0], year = n => FILMS[n-1][1];
+
+let S = (() => { try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && j.seen) return j; } catch(e){} return {seen:{...SEED}, current:null}; })();
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
+const isSeen = n => Object.prototype.hasOwnProperty.call(S.seen, n);
+const rating = n => isSeen(n) ? S.seen[n] : undefined;
+
+/* ---------- stars ---------- */
+function stars(r){
+  let h = '<span class="stars" aria-label="'+(r||0)+' out of 5 stars">';
+  for (let i=1;i<=5;i++){ const f = Math.max(0, Math.min(1, (r||0)-(i-1))); h += '<span class="s">★<i style="width:'+(f*100)+'%">★</i></span>'; }
+  return h+'</span>';
+}
+const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function rowHTML(n, tag){
+  const seen = isSeen(n), r = rating(n);
+  const meta = seen ? (r ? stars(r) : '<span class="meta">Seen · not rated</span>') : (S.current===n ? '<span class="meta" style="color:var(--gold)">Tonight</span>' : '');
+  return '<'+tag+' class="row'+(seen?' seen':'')+(S.current===n?' now':'')+'" data-n="'+n+'"><span class="n">'+n+'</span><span><span class="ti">'+esc(title(n))+'</span> <span class="yr">'+year(n)+'</span></span>'+meta+'</'+tag+'>';
+}
+
+/* ---------- audio ---------- */
+let ctx=null, master=null, themeBuf=null, themeLoading=null, muted=false;
+function audio(){
+  if (!ctx){
+    const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
+    ctx = new AC(); master = ctx.createGain(); master.gain.value = muted?0:1; master.connect(ctx.destination);
+  }
+  if (ctx.state === "suspended") ctx.resume().catch(()=>{});
+  return ctx;
+}
+function loadTheme(){
+  if (themeLoading) return themeLoading;
+  themeLoading = fetch("wheel-theme.mp3").then(r => { if(!r.ok) throw 0; return r.arrayBuffer(); })
+    .then(b => new Promise((res,rej) => { const c = audio(); if(!c) return rej(); const p = c.decodeAudioData(b,res,rej); if (p && p.catch) p.catch(rej); }))
+    .then(buf => { themeBuf = buf; }).catch(() => { themeBuf = null; });
+  return themeLoading;
+}
+function tick(){
+  if (!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+  o.type="square"; o.frequency.setValueAtTime(1900,t); o.frequency.exponentialRampToValueAtTime(700,t+.03);
+  g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.04);
+  o.connect(g).connect(master); o.start(t); o.stop(t+.05);
+}
+function thud(t, vol){
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.frequency.setValueAtTime(95,t); o.frequency.exponentialRampToValueAtTime(34,t+.22);
+  g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.3);
+  o.connect(g).connect(master); o.start(t); o.stop(t+.32);
+}
+// Menacing bed: detuned low drone a semitone apart, slow filter swell, quickening heartbeat.
+function startMenace(){
+  if (!audio()) return {beat(){}, stop(){}};
+  const t = ctx.currentTime, out = ctx.createGain(), lp = ctx.createBiquadFilter();
+  out.gain.setValueAtTime(0,t); out.gain.linearRampToValueAtTime(.5,t+1.2);
+  lp.type="lowpass"; lp.frequency.setValueAtTime(140,t); lp.Q.value = 7; lp.connect(out).connect(master);
+  const oscs = [[55,"sawtooth",.5],[58.27,"sawtooth",.42],[27.5,"sine",.8],[82.4,"triangle",.2]].map(([f,ty,v]) => {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type=ty; o.frequency.value=f; g.gain.value=v; o.connect(g).connect(lp); o.start(t); return o; });
+  const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value=.33; lg.gain.value=60; lfo.connect(lg).connect(lp.frequency); lfo.start(t);
+  let next = t+.3;
+  return {
+    beat(p){ // p: 0..1 progress — heartbeat speeds up and the filter opens
+      const now = ctx.currentTime; lp.frequency.setTargetAtTime(140+p*520, now, .3);
+      if (now >= next){ thud(now,.7); thud(now+.16,.45); next = now + (1.05 - p*.6); }
+    },
+    stop(hit){
+      const now = ctx.currentTime;
+      if (hit){ thud(now,1); const o=ctx.createOscillator(), g=ctx.createGain(); o.type="sawtooth"; o.frequency.setValueAtTime(110,now); o.frequency.exponentialRampToValueAtTime(41,now+1.4);
+        g.gain.setValueAtTime(.35,now); g.gain.exponentialRampToValueAtTime(.0001,now+1.8); o.connect(g).connect(master); o.start(now); o.stop(now+1.9); }
+      out.gain.cancelScheduledValues(now); out.gain.setTargetAtTime(0, now, hit?.5:.15);
+      setTimeout(() => { oscs.forEach(o => { try{o.stop();}catch(e){} }); try{lfo.stop();}catch(e){} }, 2500);
+    }
+  };
+}
+const ICON_ON = '<svg viewBox="0 0 24 24"><path d="M3 10v4h4l5 5V5L7 10H3zm13.5 2A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12zM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54z"/></svg>';
+const ICON_OFF = '<svg viewBox="0 0 24 24"><path d="M16.5 12A4.5 4.5 0 0 0 14 7.97v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51A8.9 8.9 0 0 0 21 12a9 9 0 0 0-7-8.77v2.06A7 7 0 0 1 19 12zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06a8.99 8.99 0 0 0 3.69-1.81L19.73 21 21 19.73 4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></svg>';
+function setMute(m){ muted = m; if (master) master.gain.value = m?0:1; $("mute").innerHTML = m?ICON_OFF:ICON_ON; $("mute").setAttribute("aria-pressed", m); $("mute").setAttribute("aria-label", m?"Unmute sound":"Mute sound"); }
+$("mute").onclick = () => setMute(!muted);
+
+/* ---------- wheel ---------- */
+const cv = $("wheel"), g2 = cv.getContext("2d");
+let angle = 0, spinning = false;
+const COLORS = ["#3d5afe","#7c4dff","#c51bff","#0091ea"];
+function drawWheel(){
+  const css = cv.clientWidth; if (!css) return;
+  const dpr = Math.min(window.devicePixelRatio||1, 3), px = Math.round(css*dpr);
+  if (cv.width !== px){ cv.width = px; cv.height = px; }
+  const R = px/2, cs = getComputedStyle(document.documentElement);
+  const seenA = cs.getPropertyValue("--seen-a").trim(), seenB = cs.getPropertyValue("--seen-b").trim();
+  g2.clearRect(0,0,px,px); g2.save(); g2.translate(R,R);
+  const a0 = -Math.PI/2, da = Math.PI*2/100;
+  for (let i=0;i<100;i++){
+    const n=i+1, seen=isSeen(n);
+    g2.beginPath(); g2.moveTo(0,0); g2.arc(0,0,R,a0+i*da,a0+(i+1)*da); g2.closePath();
+    g2.fillStyle = seen ? (i%2?seenA:seenB) : COLORS[i%4]; g2.fill();
+    g2.strokeStyle = "rgba(255,255,255,.18)"; g2.lineWidth = dpr*.6; g2.stroke();
+  }
+  g2.textAlign="right"; g2.textBaseline="middle";
+  g2.font = "700 "+Math.max(8*dpr, R*.058)+"px Roboto, system-ui, sans-serif";
+  for (let i=0;i<100;i++){
+    const n=i+1; g2.save(); g2.rotate(a0+(i+.5)*da);
+    g2.fillStyle = isSeen(n) ? "rgba(255,255,255,.38)" : (S.current===n ? "#ffc940" : "#fff");
+    g2.fillText(String(n), R*.965, 0); g2.restore();
+  }
+  // inner shade so the hub glass has something to blur
+  const sh = g2.createRadialGradient(0,0,R*.3,0,0,R*.78); sh.addColorStop(0,"rgba(8,10,40,.75)"); sh.addColorStop(1,"rgba(8,10,40,0)");
+  g2.fillStyle = sh; g2.beginPath(); g2.arc(0,0,R*.8,0,Math.PI*2); g2.fill();
+  g2.restore();
+}
+const indexAt = a => Math.floor(((((360 - (a%360)) % 360) + 360) % 360) / SEG) % 100;
+function setHub(n, cap){
+  $("hub-num").textContent = n; $("hub-cap").textContent = cap;
+  $("hub").classList.toggle("seen", typeof n === "number" && isSeen(n));
+}
+const ease = p => 1 - Math.pow(1-p, 2.5);
+
+async function spin(){
+  if (spinning) return;
+  spinning = true; $("spin").disabled = true; $("spin").textContent = "Spinning…";
+  audio(); await loadTheme();
+  const forced = window.__target;
+  const target = (forced>=1 && forced<=100) ? forced-1 : Math.floor(Math.random()*100);
+  const want = 360 - (target + .2 + Math.random()*.6)*SEG;
+  const from = angle, delta = ((((want - from) % 360) + 360) % 360) + 360*TURNS;
+  const dur = themeBuf ? themeBuf.duration : (window.__spinSeconds || FALLBACK_SPIN);
+  let clock, t0;
+  if (themeBuf && ctx){
+    const src = ctx.createBufferSource(); src.buffer = themeBuf; src.connect(master);
+    t0 = ctx.currentTime + .06; src.start(t0); clock = () => ctx.currentTime;
+  } else { t0 = performance.now()/1000; clock = () => performance.now()/1000; }
+  let last = -1, lastTick = 0;
+  const frame = () => {
+    const p = Math.max(0, Math.min(1, (clock()-t0)/dur));
+    angle = from + delta*ease(p);
+    cv.style.transform = "rotate("+angle+"deg)";
+    const i = indexAt(angle);
+    if (i !== last){ last = i; setHub(i+1, "…"); const now = performance.now(); if (now-lastTick > 45){ lastTick = now; tick(); } }
+    if (p < 1) requestAnimationFrame(frame); else landed(target+1);
+  };
+  requestAnimationFrame(frame);
+}
+function landed(n){
+  angle = angle % 360;
+  setHub(n, isSeen(n) ? "already seen" : "landed");
+  setTimeout(() => {
+    spinning = false; $("spin").disabled = false; $("spin").textContent = "Spin the wheel";
+    if (isSeen(n)) seenSheet(n); else reveal(n);
+  }, 1100);
+}
+$("spin").onclick = spin; $("hub").onclick = spin;
+
+/* ---------- reveal ---------- */
+let menace = null;
+function reveal(n){
+  const ov = $("reveal"), sc = $("rv-scroll"), ul = $("rv-rows"), pick = $("rv-pick");
+  $("rv-eyebrow").textContent = "The wheel has spoken"; $("rv-big").textContent = "Number " + n;
+  ul.innerHTML = FILMS.map((_,i) => rowHTML(i+1,"li")).join("");
+  sc.classList.remove("done"); pick.hidden = true; ov.hidden = false; sc.scrollTop = 0;
+  const row = ul.children[n-1];
+  const end = row.offsetTop - sc.clientHeight/2 + row.offsetHeight/2;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const dur = reduce ? 600 : (3500 + n*70), t0 = performance.now();
+  menace = startMenace();
+  const step = now => {
+    const p = Math.min(1, (now-t0)/dur), e = p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
+    sc.scrollTop = end*e; menace.beat(p);
+    if (p < 1) return requestAnimationFrame(step);
+    menace.stop(true); menace = null;
+    [n-1,n,n+1].forEach(k => { if (k>=1 && k<=100) ul.children[k-1].classList.add(k===n?"landed":"cand"); });
+    sc.classList.add("done"); showPick(n);
+  };
+  requestAnimationFrame(step);
+}
+function showPick(n){
+  const pick = $("rv-pick");
+  const opt = (k, label, main) => {
+    if (k<1 || k>100) return "";
+    const seen = isSeen(k), r = rating(k);
+    return '<button class="opt'+(main?" main":"")+'" data-n="'+k+'"'+(seen?" disabled":"")+'><span><span class="k">'+label+' · #'+k+'</span><br><span class="ti">'+esc(title(k))+'</span> <span class="yr">'+year(k)+'</span></span>'+
+      (seen ? (r?stars(r):'<span class="go">Seen</span>') : '<span class="go">Watch</span>')+'</button>';
+  };
+  pick.innerHTML = '<div class="eyebrow" style="text-align:center">Pick tonight\'s film</div>' + opt(n-1,"One above") + opt(n,"Landed on",true) + opt(n+1,"One below") +
+    '<button class="btn text" id="rv-again">Spin again instead</button>';
+  pick.hidden = false;
+  const sc = $("rv-scroll"), row = $("rv-rows").children[n-1];
+  sc.scrollTop = row.offsetTop - sc.clientHeight/2 + row.offsetHeight/2;
+  pick.querySelectorAll(".opt").forEach(b => b.onclick = () => { S.current = +b.dataset.n; save(); closeReveal(); render(); toast("Tonight: " + title(S.current)); });
+  $("rv-again").onclick = () => { closeReveal(); };
+}
+function closeReveal(){ if (menace){ menace.stop(false); menace=null; } $("reveal").hidden = true; }
+
+/* ---------- sheets ---------- */
+function openSheet(html){ $("sheet").innerHTML = html; $("scrim").hidden = false; }
+function closeSheet(){ $("scrim").hidden = true; }
+$("scrim").addEventListener("click", e => { if (e.target === $("scrim")) closeSheet(); });
+function seenSheet(n){
+  const r = rating(n);
+  openSheet('<div class="eyebrow">Number '+n+' · already seen</div><h2>'+esc(title(n))+'</h2><p>'+(r ? stars(r)+' &nbsp;'+r+' / 5' : 'Watched, not rated yet')+'</p>'+
+    '<div class="actions"><button class="btn primary block" id="sh-again">Spin again</button><button class="btn text" id="sh-close">Not now</button></div>');
+  $("sh-again").onclick = () => { closeSheet(); spin(); }; $("sh-close").onclick = closeSheet;
+}
+function rateSheet(n){
+  const seen = isSeen(n); let val = rating(n) || 0;
+  openSheet('<div class="eyebrow">Number '+n+' · '+year(n)+'</div><h2>'+esc(title(n))+'</h2>'+
+    '<div class="rate"><div id="rate-stars" role="slider" tabindex="0" aria-label="Your rating" aria-valuemin="0" aria-valuemax="5"></div><div class="val" id="rate-val"></div></div>'+
+    '<div class="actions"><button class="btn primary block" id="sh-save">Save rating</button>'+
+    (seen ? '<button class="btn text danger" id="sh-unwatch">Mark as not watched</button>' : '<button class="btn text" id="sh-later">We\'ve seen it — rate later</button>')+
+    '<button class="btn text" id="sh-close">Cancel</button></div>');
+  const box = $("rate-stars");
+  const paint = () => { box.innerHTML = stars(val); box.setAttribute("aria-valuenow", val); $("rate-val").textContent = val ? val+" / 5" : "Tap or slide to rate — half stars allowed"; $("sh-save").disabled = !val; };
+  const fromX = x => { const el = box.firstElementChild.getBoundingClientRect(); val = Math.max(.5, Math.min(5, Math.ceil((x-el.left)/el.width*10)/2)); paint(); };
+  let down = false;
+  box.addEventListener("pointerdown", e => { down = true; box.setPointerCapture(e.pointerId); fromX(e.clientX); });
+  box.addEventListener("pointermove", e => { if (down) fromX(e.clientX); });
+  box.addEventListener("pointerup", () => down = false); box.addEventListener("pointercancel", () => down = false);
+  box.addEventListener("keydown", e => { if (e.key==="ArrowRight"||e.key==="ArrowUp"){ val=Math.min(5,val+.5); paint(); e.preventDefault(); } if (e.key==="ArrowLeft"||e.key==="ArrowDown"){ val=Math.max(.5,val-.5); paint(); e.preventDefault(); } });
+  paint();
+  const done = msg => { if (S.current===n && isSeen(n)) S.current=null; save(); closeSheet(); render(); toast(msg); };
+  $("sh-save").onclick = () => { S.seen[n] = val; done(title(n)+" rated "+val+" / 5"); };
+  $("sh-close").onclick = closeSheet;
+  if (seen) $("sh-unwatch").onclick = () => { delete S.seen[n]; done(title(n)+" is back on the wheel"); };
+  else $("sh-later").onclick = () => { S.seen[n] = null; done(title(n)+" marked as seen"); };
+}
+let toastT;
+function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
+
+/* ---------- list + chrome ---------- */
+let filter = "all";
+function render(){
+  const ns = Object.keys(S.seen), rated = ns.map(n => S.seen[n]).filter(r => r);
+  const avg = rated.length ? (rated.reduce((a,b)=>a+b,0)/rated.length).toFixed(1) : "–";
+  $("stats").textContent = ns.length+" of 100 watched · average "+avg+" ★";
+  $("tonight").hidden = !S.current;
+  if (S.current) $("tonight-title").textContent = "#"+S.current+" "+title(S.current)+" ("+year(S.current)+")";
+  $("rows").innerHTML = FILMS.map((_,i)=>i+1).filter(n => filter==="all" || (filter==="seen") === isSeen(n))
+    .map(n => "<li>"+rowHTML(n,"button")+"</li>").join("");
+  drawWheel();
+  if (!spinning) setHub(100-ns.length, "left to watch");
+}
+$("rows").addEventListener("click", e => { const b = e.target.closest(".row"); if (b) rateSheet(+b.dataset.n); });
+document.querySelectorAll(".chip").forEach(c => c.onclick = () => { filter = c.dataset.f; document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x===c)); render(); });
+$("tonight-rate").onclick = () => rateSheet(S.current);
+function tab(name){
+  $("view-wheel").hidden = name!=="wheel"; $("view-list").hidden = name!=="list";
+  $("tab-wheel").setAttribute("aria-selected", name==="wheel"); $("tab-list").setAttribute("aria-selected", name==="list");
+  if (name==="wheel") drawWheel();
+}
+$("tab-wheel").onclick = () => tab("wheel"); $("tab-list").onclick = () => tab("list");
+window.addEventListener("resize", drawWheel);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWheel);
+setMute(false); render();
+})();
+</script>
