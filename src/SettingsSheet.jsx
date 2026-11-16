@@ -12,6 +12,24 @@ export default function SettingsSheet({ open, s, onClose, onToast }) {
   const [canInstall, setCanInstall] = useState(!!window.__installPrompt);
   useEffect(() => { const f = () => setCanInstall(!!window.__installPrompt); window.addEventListener("installable", f); return () => window.removeEventListener("installable", f); }, []);
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  // Facts about this phone's browser, shown in Settings to help work out why install isn't offered.
+  const [sw, setSw] = useState("checking…");
+  useEffect(() => {
+    if (!open) return;
+    if (!("serviceWorker" in navigator)) { setSw("not supported by this browser"); return; }
+    navigator.serviceWorker.getRegistration().then((r) => setSw(r && r.active ? (navigator.serviceWorker.controller ? "active" : "active, not yet controlling this page") : r ? "still installing" : "not registered")).catch(() => setSw("blocked"));
+  }, [open]);
+  const ua = navigator.userAgent, chrome = (ua.match(/Chrome\/(\d+)/) || [])[1];
+  const browser = /; wv\)/.test(ua) ? "an in-app browser (not Chrome itself)" : /EdgA|SamsungBrowser|OPR|Firefox|DuckDuckGo/.test(ua) ? "not Chrome: " + (ua.match(/EdgA|SamsungBrowser|OPR|Firefox|DuckDuckGo/) || [""])[0] : chrome ? "Chrome " + chrome : "unknown";
+  const checks = [
+    ["Version", __BUILD__],
+    ["Browser", browser],
+    ["Install offered by browser", canInstall ? "yes" : "no"],
+    ["Opened as an installed app", standalone ? "yes" : "no"],
+    ["Offline support", sw],
+    ["Install file", document.querySelector('link[rel="manifest"]')?.getAttribute("href") || "none"],
+    ["Secure page", window.isSecureContext ? "yes" : "no"],
+  ];
   const install = async () => {
     const p = window.__installPrompt; if (!p) return;
     p.prompt(); try { await p.userChoice; } catch (e) {}
@@ -66,7 +84,9 @@ export default function SettingsSheet({ open, s, onClose, onToast }) {
           {tmdbReady(s.tmdb) && <span className="full"><Button variant="outlined" size="small" disabled={!!busy} onClick={sendAll}>{busy || "Send all ratings now"}</Button></span>}
         </div>
 
-        <p className="credit">Film details, posters and trailers come from The Movie Database (TMDB). This product uses the TMDB API but is not endorsed or certified by TMDB. The list is The New York Times' 100 Best Movies of the 21st Century.<br />Version: {__BUILD__}</p>
+        <p className="credit">Film details, posters and trailers come from The Movie Database (TMDB). This product uses the TMDB API but is not endorsed or certified by TMDB. The list is The New York Times' 100 Best Movies of the 21st Century.</p>
+        <div className="setting"><span className="full"><b>Install check</b>
+          <small>{checks.map(([k, v]) => <span key={k} style={{ display: "block" }}>{k}: {v}</span>)}</small></span></div>
         <div className="actions"><Button variant="text" color="secondary" onClick={onClose}>Done</Button></div>
       </div>
     </Dialog>
