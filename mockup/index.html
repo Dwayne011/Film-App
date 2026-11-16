@@ -64,13 +64,13 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outl
 #wheel{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;will-change:transform}
 .pointer{position:absolute;left:50%;top:-10px;width:30px;height:38px;transform:translateX(-50%);z-index:3;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
 .pointer svg{width:100%;height:100%;display:block}
-.hub{position:absolute;left:50%;top:50%;width:44%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;z-index:2;
+.hub{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;z-index:2;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;
   background:var(--glass-strong);border:1px solid var(--glass-line);
   -webkit-backdrop-filter:blur(18px) saturate(170%);backdrop-filter:blur(18px) saturate(170%);
   box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.3)}
-.hub .num{font-size:clamp(34px,15cqw,68px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
-.hub .cap{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--fg-dim)}
+.hub .num{font-size:clamp(30px,12cqw,56px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.hub .cap{font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--fg-dim)}
 .hub.seen .num{color:var(--fg-faint)}
 /* Buttons */
 .btn{min-height:52px;padding:0 22px;border-radius:99px;font-weight:700;font-size:15px;letter-spacing:.6px;text-transform:uppercase;
@@ -123,7 +123,7 @@ button.row:active{background:var(--glass)}
 .rv-scroll .row{transition:opacity .5s,background .5s,transform .5s}
 .rv-scroll.done .row{opacity:.22}
 .rv-scroll.done .row.cand{opacity:.75}
-.rv-scroll.done .row.landed{opacity:1;background:var(--glass-strong);box-shadow:inset 0 0 0 2px var(--gold);transform:scale(1.02)}
+.rv-scroll.done .row.landed{opacity:1;background:var(--glass-strong);box-shadow:inset 0 0 0 2px var(--gold)}
 .rv-pick{padding:14px;margin:8px 0 12px;display:flex;flex-direction:column;gap:8px}
 .opt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;width:100%;
   min-height:56px;padding:8px 14px;border-radius:16px;background:var(--glass);border:1px solid var(--glass-line)}
@@ -240,7 +240,7 @@ function rowHTML(n, tag){
 }
 
 /* ---------- audio ---------- */
-let ctx=null, master=null, themeBuf=null, themeLoading=null, muted=false;
+let ctx=null, master=null, themeBuf=null, themeEnd=0, themeLoading=null, muted=false;
 function audio(){
   if (!ctx){
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return null;
@@ -253,8 +253,14 @@ function loadTheme(){
   if (themeLoading) return themeLoading;
   themeLoading = fetch("wheel-theme.mp3").then(r => { if(!r.ok) throw 0; return r.arrayBuffer(); })
     .then(b => new Promise((res,rej) => { const c = audio(); if(!c) return rej(); const p = c.decodeAudioData(b,res,rej); if (p && p.catch) p.catch(rej); }))
-    .then(buf => { themeBuf = buf; }).catch(() => { themeBuf = null; });
+    .then(buf => { themeBuf = buf; themeEnd = audibleEnd(buf); }).catch(() => { themeBuf = null; });
   return themeLoading;
+}
+// Where the track goes quiet: the last moment louder than about -34 dB.
+function audibleEnd(buf){
+  let last = 0;
+  for (let c=0;c<buf.numberOfChannels;c++){ const d = buf.getChannelData(c); let i = d.length-1; while (i>0 && Math.abs(d[i]) < .02) i--; if (i>last) last = i; }
+  return Math.max(1, Math.min(buf.duration, last/buf.sampleRate));
 }
 function tick(){
   if (!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
@@ -287,7 +293,7 @@ function startMenace(){
       const now = ctx.currentTime;
       if (hit){ thud(now,1); const o=ctx.createOscillator(), g=ctx.createGain(); o.type="sawtooth"; o.frequency.setValueAtTime(110,now); o.frequency.exponentialRampToValueAtTime(41,now+1.4);
         g.gain.setValueAtTime(.35,now); g.gain.exponentialRampToValueAtTime(.0001,now+1.8); o.connect(g).connect(master); o.start(now); o.stop(now+1.9); }
-      out.gain.cancelScheduledValues(now); out.gain.setTargetAtTime(0, now, hit?.5:.15);
+      out.gain.cancelScheduledValues(now); out.gain.setTargetAtTime(0, now, hit?.5:.35);
       setTimeout(() => { oscs.forEach(o => { try{o.stop();}catch(e){} }); try{lfo.stop();}catch(e){} }, 2500);
     }
   };
@@ -315,16 +321,34 @@ function drawWheel(){
     g2.fillStyle = seen ? (i%2?seenA:seenB) : COLORS[i%4]; g2.fill();
     g2.strokeStyle = "rgba(255,255,255,.18)"; g2.lineWidth = dpr*.6; g2.stroke();
   }
-  g2.textAlign="right"; g2.textBaseline="middle";
-  g2.font = "700 "+Math.max(8*dpr, R*.058)+"px Roboto, system-ui, sans-serif";
+  g2.textBaseline="middle";
+  const numFont = "700 "+Math.max(8*dpr, R*.058)+"px Roboto, system-ui, sans-serif";
+  const nameFont = "500 "+Math.max(5.5*dpr, R*.037)+"px Roboto, system-ui, sans-serif";
+  const fit = (t, max) => { if (g2.measureText(t).width <= max) return t; while (t.length > 1 && g2.measureText(t+"…").width > max) t = t.slice(0,-1); return t.trimEnd()+"…"; };
   for (let i=0;i<100;i++){
-    const n=i+1; g2.save(); g2.rotate(a0+(i+.5)*da);
-    g2.fillStyle = isSeen(n) ? "rgba(255,255,255,.38)" : (S.current===n ? "#ffc940" : "#fff");
-    g2.fillText(String(n), R*.965, 0); g2.restore();
+    const n=i+1, seen=isSeen(n); g2.save(); g2.rotate(a0+(i+.5)*da);
+    g2.textAlign="right"; g2.font = numFont;
+    g2.fillStyle = seen ? "rgba(255,255,255,.42)" : (S.current===n ? "#ffc940" : "#fff");
+    g2.fillText(String(n), R*.965, 0);
+    if (seen){ // film name and its stars run along the slice, reading outwards
+      g2.font = nameFont;
+      const r = S.seen[n] || 0, sw = g2.measureText("★").width, count = Math.ceil(r);
+      let x = R*.865 - count*sw;
+      g2.textAlign="left"; g2.fillStyle="#ffc940";
+      for (let k=0;k<count;k++){
+        const half = (k+1) > r;
+        if (half){ g2.save(); g2.beginPath(); g2.rect(x+k*sw, -R*.05, sw*.5, R*.1); g2.clip(); }
+        g2.fillText("★", x+k*sw, 0);
+        if (half) g2.restore();
+      }
+      const right = x - (count ? R*.012 : 0), inner = R*.37;
+      g2.textAlign="right"; g2.fillStyle="rgba(255,255,255,.8)";
+      g2.fillText(fit(title(n), right-inner), right, 0);
+    }
+    g2.restore();
   }
-  // inner shade so the hub glass has something to blur
-  const sh = g2.createRadialGradient(0,0,R*.3,0,0,R*.78); sh.addColorStop(0,"rgba(8,10,40,.75)"); sh.addColorStop(1,"rgba(8,10,40,0)");
-  g2.fillStyle = sh; g2.beginPath(); g2.arc(0,0,R*.8,0,Math.PI*2); g2.fill();
+  const sh = g2.createRadialGradient(0,0,R*.3,0,0,R*.42); sh.addColorStop(0,"rgba(8,10,40,.7)"); sh.addColorStop(1,"rgba(8,10,40,0)");
+  g2.fillStyle = sh; g2.beginPath(); g2.arc(0,0,R*.42,0,Math.PI*2); g2.fill();
   g2.restore();
 }
 const indexAt = a => Math.floor(((((360 - (a%360)) % 360) + 360) % 360) / SEG) % 100;
@@ -342,7 +366,7 @@ async function spin(){
   const target = (forced>=1 && forced<=100) ? forced-1 : Math.floor(Math.random()*100);
   const want = 360 - (target + .2 + Math.random()*.6)*SEG;
   const from = angle, delta = ((((want - from) % 360) + 360) % 360) + 360*TURNS;
-  const dur = themeBuf ? themeBuf.duration : (window.__spinSeconds || FALLBACK_SPIN);
+  const dur = themeBuf ? themeEnd : (window.__spinSeconds || FALLBACK_SPIN);
   let clock, t0;
   if (themeBuf && ctx){
     const src = ctx.createBufferSource(); src.buffer = themeBuf; src.connect(master);
@@ -365,7 +389,7 @@ function landed(n){
   setTimeout(() => {
     spinning = false; $("spin").disabled = false; $("spin").textContent = "Spin the wheel";
     if (isSeen(n)) seenSheet(n); else reveal(n);
-  }, 1100);
+  }, 600);
 }
 $("spin").onclick = spin; $("hub").onclick = spin;
 
@@ -385,7 +409,7 @@ function reveal(n){
     const p = Math.min(1, (now-t0)/dur), e = p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
     sc.scrollTop = end*e; menace.beat(p);
     if (p < 1) return requestAnimationFrame(step);
-    menace.stop(true); menace = null;
+    menace.stop(false); menace = null;
     [n-1,n,n+1].forEach(k => { if (k>=1 && k<=100) ul.children[k-1].classList.add(k===n?"landed":"cand"); });
     sc.classList.add("done"); showPick(n);
   };
