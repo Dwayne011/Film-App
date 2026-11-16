@@ -1,0 +1,19 @@
+{
+  "rules": {
+    "filmwheel": {
+      "rooms": {
+        "$room": {
+          ".read": "$room.length >= 20",
+          ".write": "$room.length >= 20 && newData.exists()",
+          ".validate": "newData.hasChildren(['updatedAt'])",
+          "seen": { "$film": { ".validate": "$film.matches(/^f[0-9]{1,3}$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 5" } },
+          "current": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 100" },
+          "skipSeen": { ".validate": "newData.isBoolean()" },
+          "tmdb": { "$k": { ".validate": "newData.isString() && newData.val().length < 600" } },
+          "updatedAt": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      }
+    }
+  }
+}

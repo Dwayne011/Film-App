@@ -18,14 +18,16 @@ Keep outstanding asks together in one clearly labelled list at the end of the me
 
 ## About the app
 
-Film Wheel: a private film-night app for the owner and their wife, working through The New York Times' 100 Best Movies of the 21st Century. React + MUI + Vite, with Firebase (Firestore for sync, Hosting for the site).
+Film Wheel: a private film-night app for the owner and their wife, working through The New York Times' 100 Best Movies of the 21st Century. React + MUI + Vite, with Firebase (Realtime Database for sync, Hosting for the site).
 
 - `npm install`, then `npm run build` (output in `dist/`), `npm run dev` for local work.
 - `src/wheelEngine.js` and `src/audio.js` are deliberately outside React: they animate every frame and are timed to the audio clock.
 - `data/films.json` holds the film details fetched once from The Movie Database (TMDB). No TMDB key is needed at build time.
-- `src/firebaseConfig.js` is `null` until a Firebase project exists; the app then saves on the device only.
-- State lives in one Firestore document, `rooms/{code}`. There is no sign-in: the long random code in the invite link is the key (see `firestore.rules`).
-- TMDB write access (token and session) is stored in that Firestore document under `tmdb`, never in this repo.
+- Live site: https://film-wheel-100.web.app. Each phone opens it once through the owner's private invite link (`/?room=<code>`). The code is never committed.
+- Firebase: the owner's account had no room for a new project, so Film Wheel lives inside their existing **Motobays** project (`motobays-3405f`), which is a separate live app. Film Wheel uses only its own Hosting site (`film-wheel-100`) and the Realtime Database, which Motobays does not use.
+- **Never deploy Firestore or Storage rules from this repo.** Motobays' Firestore rules are maintained in the Motobays codebase. Always deploy with `firebase deploy --only database,hosting:film-wheel-100 --project motobays-3405f`.
+- State lives at `filmwheel/rooms/{code}` in the Realtime Database. There is no sign-in: the long random code in the invite link is the key (see `database.rules.json`). Films are stored as `seen/f47 = stars`, with 0 meaning seen but not rated.
+- TMDB write access (token and session) is stored in that database record under `tmdb`, never in this repo. Ratings are mirrored to the owner's TMDB account, doubled to a 10-point scale.
 - `mockup/` is the approved single-file mockup, kept for reference.
 
 ## The theme song is not in this repo

@@ -29,7 +29,7 @@ export default function SettingsSheet({ open, s, onClose, onToast }) {
 
         {CLOUD ? (
           <div className="setting">
-            <span className="full"><b>Shared wheel</b><small>{s.pending ? "Saving your latest change…" : "Up to date. Changes appear on both phones within a second or two."}</small></span>
+            <span className="full"><b>Shared wheel</b><small>{s.online ? "Connected. Changes appear on both phones within a second or two." : "Offline. Changes you make now are sent when you're back online, as long as the app stays open."}</small></span>
             <span className="full"><small>To add another phone, open this link on it:</small><span className="code">{inviteLink()}</span></span>
             <span className="full" style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <Button variant="outlined" size="small" onClick={copy}>Copy invite link</Button>

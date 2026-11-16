@@ -20,7 +20,7 @@ export default function Gate({ status }) {
         {msg && <p style={{ color: "var(--danger)" }}>{msg}</p>}
         <TextField id="join-code" label="Invite link or code" value={code} onChange={(e) => setCode(e.target.value)} fullWidth autoComplete="off" />
         <Button variant="contained" disabled={!code.trim() || busy} onClick={() => joinRoom(clean(code))}>Join</Button>
-        <Button variant="text" color="secondary" disabled={busy} onClick={async () => { setBusy(true); try { await createRoom(false); } catch (e) { setBusy(false); } }}>Start a brand-new wheel instead</Button>
+        <Button variant="text" color="secondary" disabled={busy} onClick={async () => { setBusy(true); try { await createRoom(); } catch (e) { setBusy(false); } }}>Start a brand-new wheel instead</Button>
       </Paper>
     </div>
   );
