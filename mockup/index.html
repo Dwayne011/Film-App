@@ -29,6 +29,7 @@ body::after{ /* studio lights behind the glass */
     radial-gradient(50vmax 40vmax at 40% 105%, color-mix(in srgb,var(--glow-c) 34%,transparent), transparent 60%),
     linear-gradient(160deg,var(--bg),var(--bg-2));
 }
+.whiteout{position:fixed;inset:0;z-index:15;pointer-events:none;opacity:0;background:radial-gradient(circle at 50% 42%,#fff,color-mix(in srgb,var(--gold) 70%,transparent) 55%,transparent 85%)}
 .beams{ /* sweeping spotlights, only while the wheel spins */
   position:fixed; left:50%; top:42%; width:220vmax; height:220vmax; margin:-110vmax 0 0 -110vmax; z-index:-1; pointer-events:none;
   background:repeating-conic-gradient(from 0deg, rgba(255,255,255,.085) 0 7deg, transparent 7deg 30deg);
@@ -73,6 +74,7 @@ body.spinning .chrome{opacity:0;pointer-events:none}
 #lights{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .flash{position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:0;
   background:radial-gradient(circle,rgba(255,255,255,.0) 30%,color-mix(in srgb,var(--gold) 80%,transparent) 68%,rgba(255,255,255,.9) 72%,transparent 74%)}
+.ring{position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:0;border:6px solid var(--gold);box-shadow:0 0 40px var(--gold),inset 0 0 40px var(--gold)}
 .pointer{position:absolute;left:50%;top:-8px;width:34px;height:46px;margin-left:-17px;z-index:3;transform-origin:50% 12%;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6));pointer-events:none}
 .pointer svg{width:100%;height:100%;display:block}
 .hub{position:absolute;left:50%;top:50%;width:26%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;z-index:2;
@@ -178,6 +180,7 @@ button.row:active{background:var(--glass)}
 </style>
 
 <div class="beams" aria-hidden="true"></div>
+<div class="whiteout" id="whiteout" aria-hidden="true"></div>
 <div class="app">
   <header class="bar glass chrome">
     <div class="grow">
@@ -202,6 +205,7 @@ button.row:active{background:var(--glass)}
         <canvas id="wheel" aria-label="Wheel of 100 films. Hold and drag to browse."></canvas>
         <canvas id="lights" aria-hidden="true"></canvas>
         <div class="flash" id="flash"></div>
+        <div class="ring" id="ring"></div>
         <div class="pointer" id="pointer" aria-hidden="true"><svg viewBox="0 0 34 46"><path d="M17 45 L2 10 A15 15 0 0 1 32 10 Z" fill="#ffc940" stroke="#fff3c4" stroke-width="1.5"/><circle cx="17" cy="13" r="4.5" fill="#2a1c00"/></svg></div>
         <button class="hub" id="hub" aria-label="Spin the wheel">
           <span class="num" id="hub-num">100</span>
@@ -253,8 +257,9 @@ const FILMS = [["Parasite",2019],["Mulholland Drive",2001],["There Will Be Blood
 const SYN = ["A poor Seoul family cons its way into working for a wealthy household, until a secret in the basement upends everything.", "An aspiring actress arrives in Los Angeles and helps an amnesiac woman piece together who she is, in a dream that keeps curdling into a nightmare.", "A ruthless prospector builds an oil empire in turn-of-the-century California and locks horns with a young preacher.", "In 1960s Hong Kong, two neighbours realise their spouses are having an affair and drift into a restrained romance of their own.", "Three chapters in the life of a young Black man growing up in Miami as he comes to terms with who he is.", "A hunter stumbles on drug money in the Texas desert and is pursued by a relentless hitman, while an ageing sheriff follows the trail of bodies.", "After a painful break-up, a couple have each other erased from their memories. Halfway through, he changes his mind.", "A young Black man spends the weekend at his white girlfriend's family estate and uncovers something deeply sinister.", "A ten-year-old girl wanders into a world of spirits and must work in a bathhouse for the gods to free her parents.", "A Harvard student creates Facebook and is sued by the friends and rivals he left behind on the way up.", "In a desert wasteland, Max joins the rebel Furiosa as she flees a tyrant in an armoured war rig carrying his five wives.", "The commandant of Auschwitz and his wife build an idyllic family life in a house and garden beside the camp wall.", "In 2027, after two decades of human infertility, a jaded bureaucrat must escort a miraculously pregnant woman to safety.", "In Nazi-occupied France, a squad of Jewish-American soldiers and a cinema owner separately plot to kill the leaders of the Third Reich.", "Two boys grow up in a violent Rio de Janeiro favela. One becomes a photographer, the other a drug lord.", "A stolen sword draws two master warriors and a rebellious nobleman's daughter into a tale of love and duty in Qing-dynasty China.", "Two cowboys fall in love herding sheep in 1963 Wyoming and carry on a secret relationship for decades.", "Two teenage friends take a road trip across Mexico with an older woman and learn about sex, friendship and each other.", "A cartoonist, a reporter and a detective become obsessed with identifying the Zodiac killer terrorising 1970s San Francisco.", "The rise and fall of stockbroker Jordan Belfort, whose firm funded a life of fraud, drugs and excess.", "Three grown-up former child prodigies end up back under one roof when their estranged father announces he is dying.", "A legendary hotel concierge and his lobby boy are swept into a caper over a priceless painting and a family fortune between the wars.", "Filmed over twelve years with the same cast, the story of a boy growing up in Texas from the age of six to eighteen.", "A lonely writer in near-future Los Angeles falls in love with his artificially intelligent operating system.", "In 1950s London, a fastidious dressmaker's ordered life is upended by a strong-willed young woman who becomes his muse and lover.", "A writer stands trial over her husband's death at their Alpine chalet. Their blind son is the only witness.", "A screenwriter struggling to adapt a book about orchids writes himself, and his carefree twin brother, into the script.", "Batman faces the Joker, an anarchic criminal mastermind determined to drag Gotham into chaos.", "A linguist is recruited to communicate with the aliens whose ships have appeared around the world.", "A fading film star and a neglected young wife form an unlikely bond over a few sleepless days in Tokyo.", "An undercover cop infiltrates the Boston mob while a mob mole rises through the police. Each races to expose the other.", "A down-on-her-luck maid of honour battles a wealthy rival bridesmaid as her best friend's wedding plans spiral out of control.", "An Iranian couple's separation, and a dispute with the carer hired to look after his father, spiral into a tangle of accusations.", "A lonely waste-collecting robot on an abandoned Earth follows a sleek probe into space on an adventure that decides humanity's fate.", "A young man sent to a French prison rises through the ranks of the Corsican gang that controls it.", "In 1967 Minnesota, a physics professor seeks answers from three rabbis as his life quietly falls apart.", "In the summer of 1983 in northern Italy, a seventeen-year-old falls for the graduate student staying with his family.", "In 18th-century Brittany, a painter is hired to secretly paint the wedding portrait of a reluctant bride, and the two fall in love.", "A strong-willed Sacramento teenager clashes with her mother through her final year of high school.", "A year in the life of a middle-class Taipei family, seen through a father, his teenage daughter and his young son.", "A shy Parisian waitress secretly sets about improving the lives of the people around her, and finds love along the way.", "A troubled Second World War veteran drifts into the orbit of the charismatic leader of a new movement called The Cause.", "Locked in a room for fifteen years without explanation, a man is suddenly released and given five days to find out why.", "In 1969 Los Angeles, a fading TV actor and his stunt double navigate a changing Hollywood as the Manson family circles nearby.", "The Oakland A's general manager builds a competitive baseball team on a shoestring budget by trusting statistics over scouts.", "A year in the life of a live-in housekeeper for a middle-class family in early-1970s Mexico City.", "A fifteen-year-old lands a Rolling Stone assignment to tour with a rising rock band in 1973.", "In 1984 East Berlin, a Stasi officer assigned to spy on a playwright and his lover becomes absorbed in their lives.", "Nine years after their one night in Vienna, Jesse and Céline meet again in Paris with barely an hour before his flight.", "A widowed balloon salesman ties thousands of balloons to his house to fly to South America, with an accidental young stowaway.", "Solomon Northup, a free Black man from New York, is kidnapped in 1841 and sold into slavery in Louisiana.", "In early 18th-century England, two cousins compete for the affections of the frail Queen Anne.", "A Kazakh TV journalist travels across America to make a documentary, and to find Pamela Anderson.", "In 1944 Spain, a girl escapes the cruelty of her fascist stepfather into a dark fairy-tale world that sets her three tasks.", "A thief who steals secrets from dreams is offered a way home if he can plant an idea in someone's mind instead.", "A lonely, anxious novelty salesman falls in love while being extorted by a phone-sex line.", "A mockumentary following five sets of eccentric owners competing at a prestigious dog show.", "A New York jeweller and gambling addict stakes everything on a rare opal and a string of escalating bets.", "A prank-loving father invents an absurd alter ego to reconnect with his career-driven daughter.", "An ambitious young jazz drummer is pushed to breaking point by a ferocious conservatory teacher.", "A former assassin wakes from a four-year coma and sets out for revenge on the squad who betrayed her.", "A man who cannot form new memories uses tattoos and Polaroids to hunt for his wife's killer.", "A dysfunctional family crosses the country in a clapped-out VW bus to get their young daughter to a beauty pageant.", "When his wife disappears on their fifth anniversary, a husband becomes the prime suspect in the middle of a media frenzy.", "The story of J. Robert Oppenheimer, the physicist who led the creation of the atomic bomb, and what it cost him.", "Boston Globe journalists uncover the systematic cover-up of child abuse within the local Catholic Church.", "A world-famous conductor's career and life begin to unravel as accusations surface.", "A bomb disposal team in Iraq is put on edge by its new, recklessly fearless sergeant.", "An alien in the form of a woman drives around Scotland preying on lone men.", "A bullied twelve-year-old in 1980s Stockholm befriends the strange child next door, who only comes out at night.", "Danny Ocean assembles a crew to rob three Las Vegas casinos in a single night.", "In 1950s New York, a young department-store clerk falls for an older woman going through a difficult divorce.", "A rat with a gift for cooking teams up with a hapless kitchen boy at a famous Paris restaurant.", "A six-year-old spends a mischievous summer living in a budget motel in the shadow of Disney World while her mother struggles to get by.", "An elderly Parisian couple's bond is tested when one of them suffers a stroke.", "Three escaped convicts hunt for buried treasure in 1930s Mississippi in a comic riff on the Odyssey.", "A laundrette owner in the middle of a tax audit discovers she must connect with versions of herself across the multiverse to save it.", "A woman looks back on a holiday in Turkey she took with her young father twenty years earlier.", "A man reflects on his 1950s Texas childhood and his parents' opposing natures, set against the origins of the universe.", "A mother in Madrid copes with a death in her kitchen while her own late mother seemingly returns to settle unfinished business.", "A ballerina's grip on reality slips as she competes for the lead in Swan Lake.", "Former Indonesian death-squad leaders re-enact their mass killings in the style of their favourite films.", "A week in the life of a struggling folk singer in 1961 Greenwich Village.", "Two sisters' relationship is strained at a lavish wedding as a rogue planet heads towards Earth.", "San Diego's top 1970s newsreader has his world shaken when an ambitious woman joins the team.", "Two childhood friends from Seoul reunite in New York decades later and confront what might have been.", "A hobbit inherits a ring of terrible power and sets out with eight companions to destroy it.", "Agnès Varda travels France with a handheld camera, meeting people who gather what others leave behind.", "With Earth dying, a former pilot leaves his children to lead a mission through a wormhole in search of a new home.", "A twenty-seven-year-old dancer drifts between New York flats as her closest friendship and her ambitions shift.", "A volatile fifteen-year-old on an Essex estate finds her life changed when her mother brings home a new boyfriend.", "A betrayed Roman general, sold into slavery, rises as a gladiator to avenge his family.", "A law firm's fixer faces a crisis of conscience when a colleague has a breakdown over a corporate cover-up.", "In 2054, a cop in a unit that arrests murderers before they kill is himself accused of a future murder.", "Four years in the life of Julie, a young woman in Oslo navigating love and trying to work out who she is.", "T'Challa returns home to rule Wakanda and is challenged by an outsider with a claim to the throne.", "Two astronauts are stranded in orbit after debris destroys their shuttle.", "Werner Herzog examines the life and death of Timothy Treadwell, who spent thirteen summers living among Alaskan grizzlies.", "Two detectives with clashing methods hunt a serial killer in rural South Korea in the 1980s.", "Two inseparable friends try to buy alcohol for a party in their final weeks of high school."];
 // Your ratings so far. null = watched, no rating given yet.
 const SEED = {1:5,5:3,6:4.5,8:4,10:null,11:null,17:2.5,18:4,20:null,21:3,22:3.5,24:null,28:4.5,32:2.5,34:3.5,38:3.5,43:4,46:4,48:4,49:3,53:2,54:3,55:null,56:2,57:2,64:null,72:2.5,82:1.5,85:2,89:4.5,93:3,96:null,97:1,99:4.5};
-// Seconds into the theme where "The Wheel!" is sung (found by transcribing the track).
-const CUES = [12.76, 15.07, 19.74];
+// Seconds into the theme where "The" and "Wheel!" are sung, measured from the track to within about 10 ms.
+// [time, strength]: a small wind-up on "The", the big hit on "Wheel!".
+const CUES = [[12.533,0],[12.76,1],[14.843,0],[15.07,1],[19.547,0],[19.745,1]];
 const KEY = "filmwheel.mock.v1", SEG = 3.6, FALLBACK_SPIN = 22.5, TURNS = 14, BULBS = 72;
 const $ = id => document.getElementById(id);
 const title = n => FILMS[n-1][0], year = n => FILMS[n-1][1];
@@ -456,15 +461,24 @@ function flap(strength){
 const ease = p => 1 - Math.pow(1-p, 3);
 // The wheel jumps, flashes and lights up on each "The Wheel!"
 let hitUntil = 0;
-function wheelHit(){
-  hitUntil = performance.now() + 320;
+function wheelHit(big){
+  hitUntil = performance.now() + (big ? 520 : 120);
   if (reduceMotion()) return;
-  $("wheelbox").animate([{transform:"scale(1)"},{transform:"scale(1.1)",offset:.18},{transform:"scale(.985)",offset:.6},{transform:"scale(1)"}],{duration:620,easing:"ease-out"});
-  $("flash").animate([{opacity:0},{opacity:1,offset:.12},{opacity:0}],{duration:700,easing:"ease-out"});
-  $("hub").animate([{transform:"scale(1.25)"},{transform:"scale(1)"}],{duration:520,easing:"ease-out"});
-  document.querySelector(".beams").animate([{filter:"brightness(3.2)"},{filter:"brightness(1)"}],{duration:700,easing:"ease-out"});
+  const box = $("wheelbox");
+  if (!big){ // "The": a quick crouch before the jump
+    box.animate([{transform:"scale(1)"},{transform:"scale(.94)"}],{duration:200,easing:"ease-in",fill:"forwards"});
+    return;
+  }
+  // "Wheel!": hits full size within one frame, then springs back
+  box.getAnimations().forEach(x => x.cancel());
+  box.animate([{transform:"scale(1.26) rotate(-2.5deg)"},{transform:"scale(1.24) rotate(2deg)",offset:.1},{transform:"scale(.95) rotate(0deg)",offset:.42},{transform:"scale(1.07)",offset:.66},{transform:"scale(.99)",offset:.85},{transform:"scale(1)"}],{duration:900,easing:"ease-out"});
+  $("flash").animate([{opacity:1},{opacity:0}],{duration:650,easing:"ease-out"});
+  $("ring").animate([{opacity:1,transform:"scale(.9)"},{opacity:0,transform:"scale(1.7)"}],{duration:750,easing:"cubic-bezier(.1,.7,.3,1)"});
+  $("whiteout").animate([{opacity:.75},{opacity:0}],{duration:480,easing:"ease-out"});
+  $("hub").animate([{transform:"scale(1.5)"},{transform:"scale(.92)",offset:.5},{transform:"scale(1)"}],{duration:620,easing:"ease-out"});
+  document.querySelector(".beams").animate([{filter:"brightness(4.5)"},{filter:"brightness(1)"}],{duration:900,easing:"ease-out"});
+  try { if (navigator.vibrate) navigator.vibrate(60); } catch(e){}
 }
-
 async function spin(){
   if (spinning) return;
   if (S.skipSeen && Object.keys(S.seen).length >= 100){ toast("You've watched all 100!"); return; }
@@ -482,10 +496,13 @@ async function spin(){
     t0 = ctx.currentTime + .06; src.start(t0); clock = () => ctx.currentTime;
   } else { t0 = performance.now()/1000; clock = () => performance.now()/1000; }
   let last = -1, lastTick = 0, cue = 0;
+  const lag = (themeBuf && ctx) ? (ctx.outputLatency || ctx.baseLatency || 0) : 0;
   const cues = (themeBuf && ctx) ? CUES : (window.__cues || []);
   const frame = () => {
     const el = clock()-t0, p = Math.max(0, Math.min(1, el/dur));
-    while (cue < cues.length && el >= cues[cue] - .03){ cue++; wheelHit(); }
+    // What you hear lags the audio clock by the output delay (bigger on Bluetooth), so line the picture up with the sound, one frame ahead.
+    const heard = el - lag + .012;
+    while (cue < cues.length && heard >= cues[cue][0]){ wheelHit(cues[cue][1]); cue++; }
     angle = from + delta*ease(p);
     cv.style.transform = "rotate("+angle+"deg)";
     drawLights(performance.now() < hitUntil ? "all" : "chase", Math.floor(angle/(360/BULBS)));
