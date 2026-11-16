@@ -2,35 +2,43 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap">
 <style>
-/* Layout: one-screen app. Frosted Material panels float over a studio-light backdrop; the wheel is the hero. */
+/* Layout: one-screen app. Frosted Material panels float over a studio-light backdrop; an oversized wheel is the hero and runs off the sides of the screen. */
 :root{
   color-scheme:dark;
   --bg:#0a0e2c; --bg-2:#1b1460;
   --glow-a:#3d5afe; --glow-b:#c51bff; --glow-c:#ffb300;
   --glass:rgba(255,255,255,.09); --glass-strong:rgba(255,255,255,.16); --glass-line:rgba(255,255,255,.22);
-  --sheet:rgba(24,26,66,.72);
+  --sheet:rgba(24,26,66,.78);
   --fg:#f4f5ff; --fg-dim:rgba(244,245,255,.68); --fg-faint:rgba(244,245,255,.4);
-  --gold:#ffc940; --primary:#93a4ff; --on-gold:#2a1c00; --danger:#ff7a8a;
-  --seen-a:#353a55; --seen-b:#40465f;
+  --gold:#ffc940; --primary:#93a4ff; --on-gold:#2a1c00; --danger:#ff7a8a; --blood:#ff1f3d;
+  --seen-a:#353a55; --seen-b:#40465f; --rim:#0d0f2e;
   --font:"Roboto",system-ui,-apple-system,"Segoe UI",sans-serif;
-  --r:20px;
+  --r:20px; --gut:16px;
 }
+*,*::before,*::after{box-sizing:border-box}
 html,body{height:100%}
 body{
   background:var(--bg); color:var(--fg); font-family:var(--font); font-size:15px; line-height:1.4;
   overflow:hidden; -webkit-tap-highlight-color:transparent;
 }
 body::after{ /* studio lights behind the glass */
-  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  content:""; position:fixed; inset:0; z-index:-2; pointer-events:none;
   background:
     radial-gradient(60vmax 50vmax at 12% 8%, color-mix(in srgb,var(--glow-a) 60%,transparent), transparent 62%),
     radial-gradient(55vmax 45vmax at 95% 30%, color-mix(in srgb,var(--glow-b) 46%,transparent), transparent 60%),
     radial-gradient(50vmax 40vmax at 40% 105%, color-mix(in srgb,var(--glow-c) 34%,transparent), transparent 60%),
     linear-gradient(160deg,var(--bg),var(--bg-2));
 }
-*,*::before,*::after{box-sizing:border-box}
+.beams{ /* sweeping spotlights, only while the wheel spins */
+  position:fixed; left:50%; top:42%; width:220vmax; height:220vmax; margin:-110vmax 0 0 -110vmax; z-index:-1; pointer-events:none;
+  background:repeating-conic-gradient(from 0deg, rgba(255,255,255,.085) 0 7deg, transparent 7deg 30deg);
+  opacity:0; transition:opacity .8s; animation:rot 14s linear infinite; animation-play-state:paused;
+}
+body.spinning .beams{opacity:1; animation-play-state:running}
+@keyframes rot{to{transform:rotate(360deg)}}
 button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
-button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+a{color:inherit}
+button:focus-visible,a:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .glass{
   background:var(--glass); border:1px solid var(--glass-line); border-radius:var(--r);
   -webkit-backdrop-filter:blur(22px) saturate(160%); backdrop-filter:blur(22px) saturate(160%);
@@ -41,39 +49,48 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outl
   padding-block:12px;
   padding-left:max(16px,env(safe-area-inset-left,0px)); padding-right:max(16px,env(safe-area-inset-right,0px));
 }
+.chrome{transition:opacity .5s}
+body.spinning .chrome{opacity:0;pointer-events:none}
 /* App bar */
 .bar{display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px}
 .bar h1{font-size:20px;font-weight:900;letter-spacing:.2px;margin:0;line-height:1.1}
 .bar .sub{font-size:12.5px;color:var(--fg-dim);font-variant-numeric:tabular-nums}
-.bar .grow{flex:1;min-width:0}
+.grow{flex:1;min-width:0}
 .icon-btn{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--glass)}
 .icon-btn svg{width:22px;height:22px;fill:currentColor}
 .badge{font-size:10.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:3px 8px;border-radius:99px;background:var(--glass-strong);color:var(--gold)}
 /* Views */
 .view{flex:1;min-height:0;display:flex;flex-direction:column;gap:12px}
-/* Tonight card */
 .tonight{display:flex;align-items:center;gap:12px;padding:12px 12px 12px 16px}
-.tonight .grow{flex:1;min-width:0}
 .eyebrow{font-size:11px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--gold)}
 .tonight .t{font-size:16px;font-weight:700;overflow-wrap:anywhere}
-/* Wheel */
-.stage{flex:1;min-height:0;display:grid;place-items:center;container-type:size}
-.wheelbox{position:relative;width:min(100cqw,100cqh);aspect-ratio:1;max-width:100%}
-.rim{position:absolute;inset:0;border-radius:50%;
-  box-shadow:0 0 0 5px rgba(255,255,255,.14),0 0 0 6px var(--glass-line),0 0 60px color-mix(in srgb,var(--glow-a) 70%,transparent),0 18px 50px rgba(0,0,0,.5)}
-#wheel{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;will-change:transform}
-.pointer{position:absolute;left:50%;top:-10px;width:30px;height:38px;transform:translateX(-50%);z-index:3;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6))}
+/* Wheel: wider than the screen so each slice is bigger; sides run off the edges */
+.stage{flex:1;min-height:0;position:relative;container-type:size;overflow:hidden;margin-inline:calc(var(--gut) * -1)}
+.wheelbox{position:absolute;left:50%;top:14px;translate:-50% 0;width:min(145cqw,122cqh);aspect-ratio:1}
+.rim{position:absolute;inset:0;border-radius:50%;background:var(--rim);
+  box-shadow:0 0 0 2px var(--glass-line),0 0 70px color-mix(in srgb,var(--glow-a) 75%,transparent),0 18px 50px rgba(0,0,0,.5)}
+#wheel{position:absolute;inset:3.4%;width:93.2%;height:93.2%;border-radius:50%;will-change:transform;touch-action:none;cursor:grab}
+#lights{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.flash{position:absolute;inset:0;border-radius:50%;pointer-events:none;opacity:0;
+  background:radial-gradient(circle,rgba(255,255,255,.0) 30%,color-mix(in srgb,var(--gold) 80%,transparent) 68%,rgba(255,255,255,.9) 72%,transparent 74%)}
+.pointer{position:absolute;left:50%;top:-8px;width:34px;height:46px;margin-left:-17px;z-index:3;transform-origin:50% 12%;filter:drop-shadow(0 3px 6px rgba(0,0,0,.6));pointer-events:none}
 .pointer svg{width:100%;height:100%;display:block}
-.hub{position:absolute;left:50%;top:50%;width:34%;aspect-ratio:1;transform:translate(-50%,-50%);border-radius:50%;z-index:2;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;
+.hub{position:absolute;left:50%;top:50%;width:26%;aspect-ratio:1;translate:-50% -50%;border-radius:50%;z-index:2;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center;padding:0;
   background:var(--glass-strong);border:1px solid var(--glass-line);
   -webkit-backdrop-filter:blur(18px) saturate(170%);backdrop-filter:blur(18px) saturate(170%);
   box-shadow:0 10px 30px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.3)}
-.hub .num{font-size:clamp(30px,12cqw,56px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
-.hub .cap{font-size:9.5px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--fg-dim)}
+.hub .num{font-size:clamp(30px,11.5cqw,56px);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.hub .cap{font-size:10px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--fg-dim)}
 .hub.seen .num{color:var(--fg-faint)}
+.info{position:absolute;left:var(--gut);right:var(--gut);bottom:6px;z-index:4;min-height:52px;padding:8px 16px;border-radius:18px;
+  display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;background:var(--sheet)}
+.info .ti{font-weight:700;overflow-wrap:anywhere}
+.info .hint{color:var(--fg-dim);font-size:13.5px;grid-column:1/-1;text-align:center}
+.yr{font-size:12.5px;color:var(--fg-dim);font-weight:400}
+.meta{font-size:12px;color:var(--fg-faint);text-align:right}
 /* Buttons */
-.btn{min-height:52px;padding:0 22px;border-radius:99px;font-weight:700;font-size:15px;letter-spacing:.6px;text-transform:uppercase;
+.btn{min-height:52px;padding:0 22px;border-radius:99px;font-weight:700;font-size:15px;letter-spacing:.6px;text-transform:uppercase;text-decoration:none;
   display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .btn.primary{background:linear-gradient(180deg,#ffd866,var(--gold));color:var(--on-gold);box-shadow:0 8px 24px color-mix(in srgb,var(--gold) 40%,transparent),inset 0 1px 0 rgba(255,255,255,.6)}
 .btn.tonal{background:var(--glass-strong);border:1px solid var(--glass-line)}
@@ -82,6 +99,7 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outl
 .btn.small{min-height:40px;padding:0 16px;font-size:13px}
 .btn[disabled]{opacity:.45;cursor:default;box-shadow:none}
 .btn.block{width:100%}
+.btn svg{width:20px;height:20px;fill:currentColor}
 /* Bottom nav */
 .nav{display:grid;grid-template-columns:1fr 1fr;padding:6px}
 .nav button{min-height:52px;border-radius:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:12px;font-weight:500;color:var(--fg-dim)}
@@ -97,59 +115,63 @@ button:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--gold);outl
   min-height:56px;padding:8px 10px;border-radius:14px}
 .row .n{font-weight:900;font-size:17px;text-align:right;font-variant-numeric:tabular-nums;color:var(--gold)}
 .row .ti{font-weight:500;overflow-wrap:anywhere}
-.row .yr{font-size:12.5px;color:var(--fg-dim)}
-.row .meta{font-size:12px;color:var(--fg-faint);text-align:right}
-.row.seen .n,.row.seen .ti{color:var(--fg-faint)}
-.row.seen .yr{color:var(--fg-faint)}
+.row.seen .n,.row.seen .ti,.row.seen .yr{color:var(--fg-faint)}
 .row.now{background:var(--glass-strong)}
 button.row:active{background:var(--glass)}
 /* Stars */
 .stars{display:inline-flex;gap:1px;line-height:1;white-space:nowrap}
 .stars .s{position:relative;display:inline-block;color:rgba(255,255,255,.2)}
 .stars .s i{position:absolute;left:0;top:0;overflow:hidden;color:var(--gold);font-style:normal}
-.row .stars{font-size:15px}
+.row .stars,.info .stars{font-size:15px}
 /* Reveal overlay */
 .overlay{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;
-  background:rgba(4,5,18,.82);-webkit-backdrop-filter:blur(26px);backdrop-filter:blur(26px);
+  background:rgba(3,3,12,.9);-webkit-backdrop-filter:blur(26px);backdrop-filter:blur(26px);
   padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-.overlay .inner{flex:1;min-height:0;width:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;
+.dread{position:absolute;inset:0;pointer-events:none;opacity:0;box-shadow:inset 0 0 90px 30px var(--blood)}
+.overlay .inner{flex:1;min-height:0;width:100%;max-width:520px;margin:0 auto;display:flex;flex-direction:column;position:relative;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .rv-head{padding:16px 0 8px;text-align:center}
-.rv-head .big{font-size:22px;font-weight:900}
+.rv-head .big{font-size:26px;font-weight:900;font-variant-numeric:tabular-nums}
 .rv-scroll{flex:1;min-height:0;overflow:hidden;position:relative;
-  -webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+  -webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent)}
 .rv-scroll.done{overflow-y:auto}
 .rv-scroll ul{list-style:none;margin:0;padding:45vh 0}
-.rv-scroll .row{transition:opacity .5s,background .5s,transform .5s}
-.rv-scroll.done .row{opacity:.22}
-.rv-scroll.done .row.cand{opacity:.75}
-.rv-scroll.done .row.landed{opacity:1;background:var(--glass-strong);box-shadow:inset 0 0 0 2px var(--gold)}
+.rv-scroll .row{transition:opacity .6s,background .6s,box-shadow .6s}
+.rv-scroll .row > span:nth-child(2),.rv-scroll .row > :nth-child(3){transition:filter .9s,opacity .9s}
+.rv-scroll .row.veil > span:nth-child(2){filter:blur(9px);opacity:.75}
+.rv-scroll .row.veil > :nth-child(3){opacity:0}
+.rv-scroll.done .row{opacity:.14}
+.rv-scroll.done .row.cand{opacity:.8}
+.rv-scroll.done .row.landed{opacity:1}
+.rv-scroll.done .row.landed:not(.veil){background:var(--glass-strong);box-shadow:inset 0 0 0 2px var(--gold),0 0 40px color-mix(in srgb,var(--gold) 45%,transparent)}
 .rv-pick{padding:14px;margin:8px 0 12px;display:flex;flex-direction:column;gap:8px}
 .opt{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;width:100%;
   min-height:56px;padding:8px 14px;border-radius:16px;background:var(--glass);border:1px solid var(--glass-line)}
 .opt .k{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--fg-dim)}
 .opt .ti{font-weight:700;overflow-wrap:anywhere}
 .opt.main{background:linear-gradient(180deg,#ffd866,var(--gold));color:var(--on-gold);border-color:transparent}
-.opt.main .k{color:rgba(42,28,0,.7)}
+.opt.main .k,.opt.main .yr{color:rgba(42,28,0,.7)}
 .opt[disabled]{opacity:.5;cursor:default}
 .opt .go{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
 /* Sheet / dialog */
-.scrim{position:fixed;inset:0;z-index:30;background:rgba(4,5,18,.55);display:flex;align-items:flex-end;justify-content:center;
-  padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))}
-.sheet{width:100%;max-width:488px;padding:22px 18px 16px;display:flex;flex-direction:column;gap:14px;text-align:center;background:var(--sheet);border-radius:28px}
-.sheet h2{margin:0;font-size:21px;font-weight:900;text-wrap:balance;overflow-wrap:anywhere}
+.scrim{position:fixed;inset:0;z-index:30;background:rgba(4,5,18,.6);display:flex;align-items:flex-end;justify-content:center;
+  padding:16px;padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));padding-top:calc(16px + env(safe-area-inset-top,0px))}
+.sheet{width:100%;max-width:488px;max-height:100%;overflow-y:auto;padding:22px 18px 16px;display:flex;flex-direction:column;gap:14px;text-align:center;background:var(--sheet);border-radius:28px}
+.sheet h2{margin:0;font-size:22px;font-weight:900;text-wrap:balance;overflow-wrap:anywhere}
 .sheet p{margin:0;color:var(--fg-dim)}
+.sheet p.syn{color:var(--fg);font-size:15.5px;line-height:1.5;text-align:left;text-wrap:pretty}
 .sheet .actions{display:flex;flex-direction:column;gap:6px}
 .rate{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0}
 .rate .stars{font-size:clamp(40px,13vw,54px);touch-action:none;cursor:pointer;gap:2px;border-radius:12px;padding:2px 6px}
 .rate .val{font-size:14px;font-weight:700;color:var(--fg-dim);font-variant-numeric:tabular-nums;min-height:20px}
 .toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:40;
   padding:10px 16px;border-radius:99px;font-weight:500;font-size:13.5px;background:var(--sheet);width:max-content;max-width:calc(100% - 32px);text-align:center}
-@media (prefers-reduced-motion:reduce){.rv-scroll .row{transition:none}}
+@media (prefers-reduced-motion:reduce){.rv-scroll .row,.rv-scroll .row > *{transition:none}.beams{animation:none}}
 </style>
 
+<div class="beams" aria-hidden="true"></div>
 <div class="app">
-  <header class="bar glass">
+  <header class="bar glass chrome">
     <div class="grow">
       <h1>Film Wheel</h1>
       <div class="sub" id="stats"></div>
@@ -159,7 +181,7 @@ button.row:active{background:var(--glass)}
   </header>
 
   <section class="view" id="view-wheel">
-    <div class="tonight glass" id="tonight" hidden>
+    <div class="tonight glass chrome" id="tonight" hidden>
       <div class="grow">
         <div class="eyebrow">Tonight's film</div>
         <div class="t" id="tonight-title"></div>
@@ -167,17 +189,20 @@ button.row:active{background:var(--glass)}
       <button class="btn primary small" id="tonight-rate">Rate it</button>
     </div>
     <div class="stage">
-      <div class="wheelbox">
+      <div class="wheelbox" id="wheelbox">
         <div class="rim"></div>
-        <canvas id="wheel" aria-hidden="true"></canvas>
-        <div class="pointer" aria-hidden="true"><svg viewBox="0 0 30 38"><path d="M15 37 L2 8 A13 13 0 0 1 28 8 Z" fill="#ffc940" stroke="#fff3c4" stroke-width="1.5"/><circle cx="15" cy="11" r="4" fill="#2a1c00"/></svg></div>
-        <div class="hub" id="hub" aria-live="polite">
-          <div class="num" id="hub-num">100</div>
-          <div class="cap" id="hub-cap">films</div>
-        </div>
+        <canvas id="wheel" aria-label="Wheel of 100 films. Hold and drag to browse."></canvas>
+        <canvas id="lights" aria-hidden="true"></canvas>
+        <div class="flash" id="flash"></div>
+        <div class="pointer" id="pointer" aria-hidden="true"><svg viewBox="0 0 34 46"><path d="M17 45 L2 10 A15 15 0 0 1 32 10 Z" fill="#ffc940" stroke="#fff3c4" stroke-width="1.5"/><circle cx="17" cy="13" r="4.5" fill="#2a1c00"/></svg></div>
+        <button class="hub" id="hub" aria-label="Spin the wheel">
+          <span class="num" id="hub-num">100</span>
+          <span class="cap" id="hub-cap">films</span>
+        </button>
       </div>
+      <button class="info glass chrome" id="info"></button>
     </div>
-    <button class="btn primary block" id="spin">Spin the wheel</button>
+    <button class="btn primary block chrome" id="spin">Spin the wheel</button>
   </section>
 
   <section class="view" id="view-list" hidden>
@@ -191,16 +216,17 @@ button.row:active{background:var(--glass)}
     </div>
   </section>
 
-  <nav class="nav glass" role="tablist">
+  <nav class="nav glass chrome" role="tablist">
     <button role="tab" id="tab-wheel" aria-selected="true"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 2.07A8 8 0 0 1 19.93 11H14.8a3 3 0 0 0-1.8-1.8V4.07zM11 4.07V9.2A3 3 0 0 0 9.2 11H4.07A8 8 0 0 1 11 4.07zM4.07 13H9.2a3 3 0 0 0 1.8 1.8v5.13A8 8 0 0 1 4.07 13zM13 19.93V14.8a3 3 0 0 0 1.8-1.8h5.13A8 8 0 0 1 13 19.93z"/></svg>Wheel</button>
     <button role="tab" id="tab-list" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M3 5h2v2H3V5zm4 0h14v2H7V5zM3 11h2v2H3v-2zm4 0h14v2H7v-2zm-4 6h2v2H3v-2zm4 0h14v2H7v-2z"/></svg>The 100</button>
   </nav>
 </div>
 
 <div class="overlay" id="reveal" hidden>
+  <div class="dread" id="dread"></div>
   <div class="inner">
     <div class="rv-head">
-      <div class="eyebrow" id="rv-eyebrow">The wheel has spoken</div>
+      <div class="eyebrow" id="rv-eyebrow"></div>
       <div class="big" id="rv-big"></div>
     </div>
     <div class="rv-scroll" id="rv-scroll"><ul id="rv-rows"></ul></div>
@@ -215,29 +241,38 @@ button.row:active{background:var(--glass)}
 (() => {
 "use strict";
 const FILMS = [["Parasite",2019],["Mulholland Drive",2001],["There Will Be Blood",2007],["In the Mood for Love",2000],["Moonlight",2016],["No Country for Old Men",2007],["Eternal Sunshine of the Spotless Mind",2004],["Get Out",2017],["Spirited Away",2001],["The Social Network",2010],["Mad Max: Fury Road",2015],["The Zone of Interest",2023],["Children of Men",2006],["Inglourious Basterds",2009],["City of God",2002],["Crouching Tiger, Hidden Dragon",2000],["Brokeback Mountain",2005],["Y Tu Mamá También",2001],["Zodiac",2007],["The Wolf of Wall Street",2013],["The Royal Tenenbaums",2001],["The Grand Budapest Hotel",2014],["Boyhood",2014],["Her",2013],["Phantom Thread",2017],["Anatomy of a Fall",2023],["Adaptation",2002],["The Dark Knight",2008],["Arrival",2016],["Lost in Translation",2003],["The Departed",2006],["Bridesmaids",2011],["A Separation",2011],["WALL·E",2008],["A Prophet",2009],["A Serious Man",2009],["Call Me by Your Name",2017],["Portrait of a Lady on Fire",2019],["Lady Bird",2017],["Yi Yi",2000],["Amélie",2001],["The Master",2012],["Oldboy",2003],["Once Upon a Time… in Hollywood",2019],["Moneyball",2011],["Roma",2018],["Almost Famous",2000],["The Lives of Others",2006],["Before Sunset",2004],["Up",2009],["12 Years a Slave",2013],["The Favourite",2018],["Borat",2006],["Pan’s Labyrinth",2006],["Inception",2010],["Punch-Drunk Love",2002],["Best in Show",2000],["Uncut Gems",2019],["Toni Erdmann",2016],["Whiplash",2014],["Kill Bill: Vol. 1",2003],["Memento",2000],["Little Miss Sunshine",2006],["Gone Girl",2014],["Oppenheimer",2023],["Spotlight",2015],["Tár",2022],["The Hurt Locker",2008],["Under the Skin",2013],["Let the Right One In",2008],["Ocean’s Eleven",2001],["Carol",2015],["Ratatouille",2007],["The Florida Project",2017],["Amour",2012],["O Brother, Where Art Thou?",2000],["Everything Everywhere All at Once",2022],["Aftersun",2022],["The Tree of Life",2011],["Volver",2006],["Black Swan",2010],["The Act of Killing",2012],["Inside Llewyn Davis",2013],["Melancholia",2011],["Anchorman: The Legend of Ron Burgundy",2004],["Past Lives",2023],["The Lord of the Rings: The Fellowship of the Ring",2001],["The Gleaners and I",2000],["Interstellar",2014],["Frances Ha",2012],["Fish Tank",2009],["Gladiator",2000],["Michael Clayton",2007],["Minority Report",2002],["The Worst Person in the World",2021],["Black Panther",2018],["Gravity",2013],["Grizzly Man",2005],["Memories of Murder",2003],["Superbad",2007]];
+// One-line, spoiler-free synopses (placeholder copy for the mockup).
+const SYN = ["A poor Seoul family cons its way into working for a wealthy household, until a secret in the basement upends everything.", "An aspiring actress arrives in Los Angeles and helps an amnesiac woman piece together who she is, in a dream that keeps curdling into a nightmare.", "A ruthless prospector builds an oil empire in turn-of-the-century California and locks horns with a young preacher.", "In 1960s Hong Kong, two neighbours realise their spouses are having an affair and drift into a restrained romance of their own.", "Three chapters in the life of a young Black man growing up in Miami as he comes to terms with who he is.", "A hunter stumbles on drug money in the Texas desert and is pursued by a relentless hitman, while an ageing sheriff follows the trail of bodies.", "After a painful break-up, a couple have each other erased from their memories. Halfway through, he changes his mind.", "A young Black man spends the weekend at his white girlfriend's family estate and uncovers something deeply sinister.", "A ten-year-old girl wanders into a world of spirits and must work in a bathhouse for the gods to free her parents.", "A Harvard student creates Facebook and is sued by the friends and rivals he left behind on the way up.", "In a desert wasteland, Max joins the rebel Furiosa as she flees a tyrant in an armoured war rig carrying his five wives.", "The commandant of Auschwitz and his wife build an idyllic family life in a house and garden beside the camp wall.", "In 2027, after two decades of human infertility, a jaded bureaucrat must escort a miraculously pregnant woman to safety.", "In Nazi-occupied France, a squad of Jewish-American soldiers and a cinema owner separately plot to kill the leaders of the Third Reich.", "Two boys grow up in a violent Rio de Janeiro favela. One becomes a photographer, the other a drug lord.", "A stolen sword draws two master warriors and a rebellious nobleman's daughter into a tale of love and duty in Qing-dynasty China.", "Two cowboys fall in love herding sheep in 1963 Wyoming and carry on a secret relationship for decades.", "Two teenage friends take a road trip across Mexico with an older woman and learn about sex, friendship and each other.", "A cartoonist, a reporter and a detective become obsessed with identifying the Zodiac killer terrorising 1970s San Francisco.", "The rise and fall of stockbroker Jordan Belfort, whose firm funded a life of fraud, drugs and excess.", "Three grown-up former child prodigies end up back under one roof when their estranged father announces he is dying.", "A legendary hotel concierge and his lobby boy are swept into a caper over a priceless painting and a family fortune between the wars.", "Filmed over twelve years with the same cast, the story of a boy growing up in Texas from the age of six to eighteen.", "A lonely writer in near-future Los Angeles falls in love with his artificially intelligent operating system.", "In 1950s London, a fastidious dressmaker's ordered life is upended by a strong-willed young woman who becomes his muse and lover.", "A writer stands trial over her husband's death at their Alpine chalet. Their blind son is the only witness.", "A screenwriter struggling to adapt a book about orchids writes himself, and his carefree twin brother, into the script.", "Batman faces the Joker, an anarchic criminal mastermind determined to drag Gotham into chaos.", "A linguist is recruited to communicate with the aliens whose ships have appeared around the world.", "A fading film star and a neglected young wife form an unlikely bond over a few sleepless days in Tokyo.", "An undercover cop infiltrates the Boston mob while a mob mole rises through the police. Each races to expose the other.", "A down-on-her-luck maid of honour battles a wealthy rival bridesmaid as her best friend's wedding plans spiral out of control.", "An Iranian couple's separation, and a dispute with the carer hired to look after his father, spiral into a tangle of accusations.", "A lonely waste-collecting robot on an abandoned Earth follows a sleek probe into space on an adventure that decides humanity's fate.", "A young man sent to a French prison rises through the ranks of the Corsican gang that controls it.", "In 1967 Minnesota, a physics professor seeks answers from three rabbis as his life quietly falls apart.", "In the summer of 1983 in northern Italy, a seventeen-year-old falls for the graduate student staying with his family.", "In 18th-century Brittany, a painter is hired to secretly paint the wedding portrait of a reluctant bride, and the two fall in love.", "A strong-willed Sacramento teenager clashes with her mother through her final year of high school.", "A year in the life of a middle-class Taipei family, seen through a father, his teenage daughter and his young son.", "A shy Parisian waitress secretly sets about improving the lives of the people around her, and finds love along the way.", "A troubled Second World War veteran drifts into the orbit of the charismatic leader of a new movement called The Cause.", "Locked in a room for fifteen years without explanation, a man is suddenly released and given five days to find out why.", "In 1969 Los Angeles, a fading TV actor and his stunt double navigate a changing Hollywood as the Manson family circles nearby.", "The Oakland A's general manager builds a competitive baseball team on a shoestring budget by trusting statistics over scouts.", "A year in the life of a live-in housekeeper for a middle-class family in early-1970s Mexico City.", "A fifteen-year-old lands a Rolling Stone assignment to tour with a rising rock band in 1973.", "In 1984 East Berlin, a Stasi officer assigned to spy on a playwright and his lover becomes absorbed in their lives.", "Nine years after their one night in Vienna, Jesse and Céline meet again in Paris with barely an hour before his flight.", "A widowed balloon salesman ties thousands of balloons to his house to fly to South America, with an accidental young stowaway.", "Solomon Northup, a free Black man from New York, is kidnapped in 1841 and sold into slavery in Louisiana.", "In early 18th-century England, two cousins compete for the affections of the frail Queen Anne.", "A Kazakh TV journalist travels across America to make a documentary, and to find Pamela Anderson.", "In 1944 Spain, a girl escapes the cruelty of her fascist stepfather into a dark fairy-tale world that sets her three tasks.", "A thief who steals secrets from dreams is offered a way home if he can plant an idea in someone's mind instead.", "A lonely, anxious novelty salesman falls in love while being extorted by a phone-sex line.", "A mockumentary following five sets of eccentric owners competing at a prestigious dog show.", "A New York jeweller and gambling addict stakes everything on a rare opal and a string of escalating bets.", "A prank-loving father invents an absurd alter ego to reconnect with his career-driven daughter.", "An ambitious young jazz drummer is pushed to breaking point by a ferocious conservatory teacher.", "A former assassin wakes from a four-year coma and sets out for revenge on the squad who betrayed her.", "A man who cannot form new memories uses tattoos and Polaroids to hunt for his wife's killer.", "A dysfunctional family crosses the country in a clapped-out VW bus to get their young daughter to a beauty pageant.", "When his wife disappears on their fifth anniversary, a husband becomes the prime suspect in the middle of a media frenzy.", "The story of J. Robert Oppenheimer, the physicist who led the creation of the atomic bomb, and what it cost him.", "Boston Globe journalists uncover the systematic cover-up of child abuse within the local Catholic Church.", "A world-famous conductor's career and life begin to unravel as accusations surface.", "A bomb disposal team in Iraq is put on edge by its new, recklessly fearless sergeant.", "An alien in the form of a woman drives around Scotland preying on lone men.", "A bullied twelve-year-old in 1980s Stockholm befriends the strange child next door, who only comes out at night.", "Danny Ocean assembles a crew to rob three Las Vegas casinos in a single night.", "In 1950s New York, a young department-store clerk falls for an older woman going through a difficult divorce.", "A rat with a gift for cooking teams up with a hapless kitchen boy at a famous Paris restaurant.", "A six-year-old spends a mischievous summer living in a budget motel in the shadow of Disney World while her mother struggles to get by.", "An elderly Parisian couple's bond is tested when one of them suffers a stroke.", "Three escaped convicts hunt for buried treasure in 1930s Mississippi in a comic riff on the Odyssey.", "A laundrette owner in the middle of a tax audit discovers she must connect with versions of herself across the multiverse to save it.", "A woman looks back on a holiday in Turkey she took with her young father twenty years earlier.", "A man reflects on his 1950s Texas childhood and his parents' opposing natures, set against the origins of the universe.", "A mother in Madrid copes with a death in her kitchen while her own late mother seemingly returns to settle unfinished business.", "A ballerina's grip on reality slips as she competes for the lead in Swan Lake.", "Former Indonesian death-squad leaders re-enact their mass killings in the style of their favourite films.", "A week in the life of a struggling folk singer in 1961 Greenwich Village.", "Two sisters' relationship is strained at a lavish wedding as a rogue planet heads towards Earth.", "San Diego's top 1970s newsreader has his world shaken when an ambitious woman joins the team.", "Two childhood friends from Seoul reunite in New York decades later and confront what might have been.", "A hobbit inherits a ring of terrible power and sets out with eight companions to destroy it.", "Agnès Varda travels France with a handheld camera, meeting people who gather what others leave behind.", "With Earth dying, a former pilot leaves his children to lead a mission through a wormhole in search of a new home.", "A twenty-seven-year-old dancer drifts between New York flats as her closest friendship and her ambitions shift.", "A volatile fifteen-year-old on an Essex estate finds her life changed when her mother brings home a new boyfriend.", "A betrayed Roman general, sold into slavery, rises as a gladiator to avenge his family.", "A law firm's fixer faces a crisis of conscience when a colleague has a breakdown over a corporate cover-up.", "In 2054, a cop in a unit that arrests murderers before they kill is himself accused of a future murder.", "Four years in the life of Julie, a young woman in Oslo navigating love and trying to work out who she is.", "T'Challa returns home to rule Wakanda and is challenged by an outsider with a claim to the throne.", "Two astronauts are stranded in orbit after debris destroys their shuttle.", "Werner Herzog examines the life and death of Timothy Treadwell, who spent thirteen summers living among Alaskan grizzlies.", "Two detectives with clashing methods hunt a serial killer in rural South Korea in the 1980s.", "Two inseparable friends try to buy alcohol for a party in their final weeks of high school."];
 // Your ratings so far. null = watched, no rating given yet.
 const SEED = {1:5,5:3,6:4.5,8:4,10:null,11:null,17:2.5,18:4,20:null,21:3,22:3.5,24:null,28:4.5,32:2.5,34:3.5,38:3.5,43:4,46:4,48:4,49:3,53:2,54:3,55:null,56:2,57:2,64:null,72:2.5,82:1.5,85:2,89:4.5,93:3,96:null,97:1,99:4.5};
-const KEY = "filmwheel.mock.v1", SEG = 3.6, FALLBACK_SPIN = 24.42, TURNS = 10;
+const KEY = "filmwheel.mock.v1", SEG = 3.6, FALLBACK_SPIN = 22.5, TURNS = 14, BULBS = 72;
 const $ = id => document.getElementById(id);
 const title = n => FILMS[n-1][0], year = n => FILMS[n-1][1];
+const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 let S = (() => { try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && j.seen) return j; } catch(e){} return {seen:{...SEED}, current:null}; })();
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} };
 const isSeen = n => Object.prototype.hasOwnProperty.call(S.seen, n);
 const rating = n => isSeen(n) ? S.seen[n] : undefined;
 
-/* ---------- stars ---------- */
+/* ---------- small renderers ---------- */
 function stars(r){
   let h = '<span class="stars" aria-label="'+(r||0)+' out of 5 stars">';
   for (let i=1;i<=5;i++){ const f = Math.max(0, Math.min(1, (r||0)-(i-1))); h += '<span class="s">★<i style="width:'+(f*100)+'%">★</i></span>'; }
   return h+'</span>';
 }
 const esc = s => s.replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function rowHTML(n, tag){
-  const seen = isSeen(n), r = rating(n);
-  const meta = seen ? (r ? stars(r) : '<span class="meta">Seen · not rated</span>') : (S.current===n ? '<span class="meta" style="color:var(--gold)">Tonight</span>' : '');
-  return '<'+tag+' class="row'+(seen?' seen':'')+(S.current===n?' now':'')+'" data-n="'+n+'"><span class="n">'+n+'</span><span><span class="ti">'+esc(title(n))+'</span> <span class="yr">'+year(n)+'</span></span>'+meta+'</'+tag+'>';
+function statusHTML(n){
+  const r = rating(n);
+  if (isSeen(n)) return r ? stars(r) : '<span class="meta">Seen · not rated</span>';
+  return S.current===n ? '<span class="meta" style="color:var(--gold)">Tonight</span>' : '';
 }
+function rowHTML(n, tag){
+  return '<'+tag+' class="row'+(isSeen(n)?' seen':'')+(S.current===n?' now':'')+'" data-n="'+n+'"><span class="n">'+n+'</span><span><span class="ti">'+esc(title(n))+'</span> <span class="yr">'+year(n)+'</span></span>'+(statusHTML(n)||'<span></span>')+'</'+tag+'>';
+}
+const trailerURL = n => "https://www.youtube.com/results?search_query=" + encodeURIComponent(title(n)+" "+year(n)+" official trailer");
+const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+const aboutHTML = n => '<p class="syn">'+esc(SYN[n-1])+'</p><a class="btn tonal block" href="'+trailerURL(n)+'" target="_blank" rel="noopener">'+PLAY+'Watch the trailer</a>';
 
 /* ---------- audio ---------- */
 let ctx=null, master=null, themeBuf=null, themeEnd=0, themeLoading=null, muted=false;
@@ -249,6 +284,12 @@ function audio(){
   if (ctx.state === "suspended") ctx.resume().catch(()=>{});
   return ctx;
 }
+// Where the track goes quiet: the last moment louder than about -34 dB.
+function audibleEnd(buf){
+  let last = 0;
+  for (let c=0;c<buf.numberOfChannels;c++){ const d = buf.getChannelData(c); let i = d.length-1; while (i>0 && Math.abs(d[i]) < .02) i--; if (i>last) last = i; }
+  return Math.max(1, Math.min(buf.duration, last/buf.sampleRate));
+}
 function loadTheme(){
   if (themeLoading) return themeLoading;
   themeLoading = fetch("wheel-theme.mp3").then(r => { if(!r.ok) throw 0; return r.arrayBuffer(); })
@@ -256,17 +297,12 @@ function loadTheme(){
     .then(buf => { themeBuf = buf; themeEnd = audibleEnd(buf); }).catch(() => { themeBuf = null; });
   return themeLoading;
 }
-// Where the track goes quiet: the last moment louder than about -34 dB.
-function audibleEnd(buf){
-  let last = 0;
-  for (let c=0;c<buf.numberOfChannels;c++){ const d = buf.getChannelData(c); let i = d.length-1; while (i>0 && Math.abs(d[i]) < .02) i--; if (i>last) last = i; }
-  return Math.max(1, Math.min(buf.duration, last/buf.sampleRate));
-}
-function tick(){
-  if (!ctx) return; const t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
-  o.type="square"; o.frequency.setValueAtTime(1900,t); o.frequency.exponentialRampToValueAtTime(700,t+.03);
-  g.gain.setValueAtTime(.05,t); g.gain.exponentialRampToValueAtTime(.0001,t+.04);
-  o.connect(g).connect(master); o.start(t); o.stop(t+.05);
+// Flapper click. weight 0..1: heavier and lower as the wheel slows.
+function tick(weight){
+  if (!ctx) return; const w = weight||0, t = ctx.currentTime, o = ctx.createOscillator(), g = ctx.createGain();
+  o.type="square"; o.frequency.setValueAtTime(1900-w*900,t); o.frequency.exponentialRampToValueAtTime(700-w*380,t+.03+w*.03);
+  g.gain.setValueAtTime(.05+w*.16,t); g.gain.exponentialRampToValueAtTime(.0001,t+.04+w*.06);
+  o.connect(g).connect(master); o.start(t); o.stop(t+.12);
 }
 function thud(t, vol){
   const o = ctx.createOscillator(), g = ctx.createGain();
@@ -274,27 +310,33 @@ function thud(t, vol){
   g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.3);
   o.connect(g).connect(master); o.start(t); o.stop(t+.32);
 }
-// Menacing bed: detuned low drone a semitone apart, slow filter swell, quickening heartbeat.
+// Menacing bed: low drone a semitone apart, a slow rising tone, and a heartbeat that quickens.
 function startMenace(){
-  if (!audio()) return {beat(){}, stop(){}};
-  const t = ctx.currentTime, out = ctx.createGain(), lp = ctx.createBiquadFilter();
-  out.gain.setValueAtTime(0,t); out.gain.linearRampToValueAtTime(.5,t+1.2);
-  lp.type="lowpass"; lp.frequency.setValueAtTime(140,t); lp.Q.value = 7; lp.connect(out).connect(master);
-  const oscs = [[55,"sawtooth",.5],[58.27,"sawtooth",.42],[27.5,"sine",.8],[82.4,"triangle",.2]].map(([f,ty,v]) => {
-    const o = ctx.createOscillator(), g = ctx.createGain(); o.type=ty; o.frequency.value=f; g.gain.value=v; o.connect(g).connect(lp); o.start(t); return o; });
-  const lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value=.33; lg.gain.value=60; lfo.connect(lg).connect(lp.frequency); lfo.start(t);
-  let next = t+.3;
+  const has = !!audio(); let out, lp, riser, rg, oscs=[], lfo, nextBeat = performance.now()+300;
+  if (has){
+    const t = ctx.currentTime; out = ctx.createGain(); lp = ctx.createBiquadFilter();
+    out.gain.setValueAtTime(0,t); out.gain.linearRampToValueAtTime(.5,t+1.2);
+    lp.type="lowpass"; lp.frequency.setValueAtTime(140,t); lp.Q.value = 7; lp.connect(out).connect(master);
+    oscs = [[55,"sawtooth",.5],[58.27,"sawtooth",.42],[27.5,"sine",.8],[82.4,"triangle",.2]].map(([f,ty,v]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain(); o.type=ty; o.frequency.value=f; g.gain.value=v; o.connect(g).connect(lp); o.start(t); return o; });
+    lfo = ctx.createOscillator(); const lg = ctx.createGain(); lfo.frequency.value=.33; lg.gain.value=60; lfo.connect(lg).connect(lp.frequency); lfo.start(t);
+    riser = ctx.createOscillator(); rg = ctx.createGain(); riser.type="sine"; riser.frequency.value=110; rg.gain.value=0; riser.connect(rg).connect(out); riser.start(t);
+    const trem = ctx.createOscillator(), tg = ctx.createGain(); trem.frequency.value=7; tg.gain.value=.03; trem.connect(tg).connect(rg.gain); trem.start(t); oscs.push(trem);
+  }
+  let live = true;
   return {
-    beat(p){ // p: 0..1 progress — heartbeat speeds up and the filter opens
-      const now = ctx.currentTime; lp.frequency.setTargetAtTime(140+p*520, now, .3);
-      if (now >= next){ thud(now,.7); thud(now+.16,.45); next = now + (1.05 - p*.6); }
+    // p: 0..1 tension. Returns true on the frames a heartbeat lands.
+    beat(p){
+      if (!live) return false;
+      if (has){ const now = ctx.currentTime; lp.frequency.setTargetAtTime(140+p*620, now, .3); riser.frequency.setTargetAtTime(110*Math.pow(2,p*1.9), now, .25); rg.gain.setTargetAtTime(p*p*.11, now, .3); }
+      const now = performance.now();
+      if (now >= nextBeat){ nextBeat = now + (1100 - p*720); if (has){ const t = ctx.currentTime; thud(t,.75); thud(t+.15,.5); } return true; }
+      return false;
     },
-    stop(hit){
-      const now = ctx.currentTime;
-      if (hit){ thud(now,1); const o=ctx.createOscillator(), g=ctx.createGain(); o.type="sawtooth"; o.frequency.setValueAtTime(110,now); o.frequency.exponentialRampToValueAtTime(41,now+1.4);
-        g.gain.setValueAtTime(.35,now); g.gain.exponentialRampToValueAtTime(.0001,now+1.8); o.connect(g).connect(master); o.start(now); o.stop(now+1.9); }
-      out.gain.cancelScheduledValues(now); out.gain.setTargetAtTime(0, now, hit?.5:.35);
-      setTimeout(() => { oscs.forEach(o => { try{o.stop();}catch(e){} }); try{lfo.stop();}catch(e){} }, 2500);
+    stop(fade){
+      live = false; if (!has) return; const now = ctx.currentTime;
+      out.gain.cancelScheduledValues(now); out.gain.setTargetAtTime(0, now, fade);
+      setTimeout(() => { oscs.concat([lfo,riser]).forEach(o => { try{o.stop();}catch(e){} }); }, 2500);
     }
   };
 }
@@ -304,8 +346,8 @@ function setMute(m){ muted = m; if (master) master.gain.value = m?0:1; $("mute")
 $("mute").onclick = () => setMute(!muted);
 
 /* ---------- wheel ---------- */
-const cv = $("wheel"), g2 = cv.getContext("2d");
-let angle = 0, spinning = false;
+const cv = $("wheel"), g2 = cv.getContext("2d"), lcv = $("lights"), lg2 = lcv.getContext("2d");
+let angle = 0, spinning = false, browseN = null;
 const COLORS = ["#3d5afe","#7c4dff","#c51bff","#0091ea"];
 function drawWheel(){
   const css = cv.clientWidth; if (!css) return;
@@ -316,24 +358,22 @@ function drawWheel(){
   g2.clearRect(0,0,px,px); g2.save(); g2.translate(R,R);
   const a0 = -Math.PI/2, da = Math.PI*2/100;
   for (let i=0;i<100;i++){
-    const n=i+1, seen=isSeen(n);
+    const n=i+1;
     g2.beginPath(); g2.moveTo(0,0); g2.arc(0,0,R,a0+i*da,a0+(i+1)*da); g2.closePath();
-    g2.fillStyle = seen ? (i%2?seenA:seenB) : COLORS[i%4]; g2.fill();
+    g2.fillStyle = isSeen(n) ? (i%2?seenA:seenB) : COLORS[i%4]; g2.fill();
     g2.strokeStyle = "rgba(255,255,255,.18)"; g2.lineWidth = dpr*.6; g2.stroke();
   }
   g2.textBaseline="middle";
-  const numFont = "700 "+Math.max(8*dpr, R*.058)+"px Roboto, system-ui, sans-serif";
-  const nameFont = "500 "+Math.max(5.5*dpr, R*.037)+"px Roboto, system-ui, sans-serif";
+  const numFont = "700 "+(R*.056)+"px Roboto, system-ui, sans-serif", nameFont = "500 "+(R*.038)+"px Roboto, system-ui, sans-serif";
   const fit = (t, max) => { if (g2.measureText(t).width <= max) return t; while (t.length > 1 && g2.measureText(t+"…").width > max) t = t.slice(0,-1); return t.trimEnd()+"…"; };
   for (let i=0;i<100;i++){
     const n=i+1, seen=isSeen(n); g2.save(); g2.rotate(a0+(i+.5)*da);
     g2.textAlign="right"; g2.font = numFont;
     g2.fillStyle = seen ? "rgba(255,255,255,.42)" : (S.current===n ? "#ffc940" : "#fff");
-    g2.fillText(String(n), R*.965, 0);
+    g2.fillText(String(n), R*.975, 0);
     if (seen){ // film name and its stars run along the slice, reading outwards
       g2.font = nameFont;
-      const r = S.seen[n] || 0, sw = g2.measureText("★").width, count = Math.ceil(r);
-      let x = R*.865 - count*sw;
+      const r = S.seen[n] || 0, sw = g2.measureText("★").width, count = Math.ceil(r), x = R*.87 - count*sw;
       g2.textAlign="left"; g2.fillStyle="#ffc940";
       for (let k=0;k<count;k++){
         const half = (k+1) > r;
@@ -341,30 +381,52 @@ function drawWheel(){
         g2.fillText("★", x+k*sw, 0);
         if (half) g2.restore();
       }
-      const right = x - (count ? R*.012 : 0), inner = R*.37;
-      g2.textAlign="right"; g2.fillStyle="rgba(255,255,255,.8)";
+      const right = x - (count ? R*.012 : 0), inner = R*.31;
+      g2.textAlign="right"; g2.fillStyle="rgba(255,255,255,.82)";
       g2.fillText(fit(title(n), right-inner), right, 0);
     }
     g2.restore();
   }
-  const sh = g2.createRadialGradient(0,0,R*.3,0,0,R*.42); sh.addColorStop(0,"rgba(8,10,40,.7)"); sh.addColorStop(1,"rgba(8,10,40,0)");
-  g2.fillStyle = sh; g2.beginPath(); g2.arc(0,0,R*.42,0,Math.PI*2); g2.fill();
+  const sh = g2.createRadialGradient(0,0,R*.24,0,0,R*.36); sh.addColorStop(0,"rgba(8,10,40,.7)"); sh.addColorStop(1,"rgba(8,10,40,0)");
+  g2.fillStyle = sh; g2.beginPath(); g2.arc(0,0,R*.36,0,Math.PI*2); g2.fill();
   g2.restore();
 }
+// Bulbs round the rim. mode: "idle" (alternate twinkle), "chase" (run with the wheel), "all" (win flash), "off".
+function drawLights(mode, phase){
+  const css = lcv.clientWidth; if (!css) return;
+  const dpr = Math.min(window.devicePixelRatio||1, 2), px = Math.round(css*dpr);
+  if (lcv.width !== px){ lcv.width = px; lcv.height = px; }
+  const R = px/2, rr = R*.983, br = Math.max(2*dpr, R*.0105);
+  lg2.clearRect(0,0,px,px);
+  for (let k=0;k<BULBS;k++){
+    const a = -Math.PI/2 + (k+.5)*Math.PI*2/BULBS;
+    const on = mode==="all" || (mode==="idle" && (k+phase)%2===0) || (mode==="chase" && (((k-phase)%4)+4)%4===0);
+    lg2.beginPath(); lg2.arc(R+Math.cos(a)*rr, R+Math.sin(a)*rr, br, 0, Math.PI*2);
+    lg2.shadowColor = "#ffc940"; lg2.shadowBlur = on ? br*3.5 : 0;
+    lg2.fillStyle = on ? "#fff3c4" : "rgba(255,201,64,.22)"; lg2.fill();
+  }
+}
+let idlePhase = 0;
+setInterval(() => { if (!spinning && !$("view-wheel").hidden){ idlePhase ^= 1; drawLights("idle", idlePhase); } }, 700);
+
 const indexAt = a => Math.floor(((((360 - (a%360)) % 360) + 360) % 360) / SEG) % 100;
 function setHub(n, cap){
   $("hub-num").textContent = n; $("hub-cap").textContent = cap;
-  $("hub").classList.toggle("seen", typeof n === "number" && isSeen(n));
+  $("hub").classList.toggle("seen", cap!=="left to watch" && isSeen(n));
 }
-const ease = p => 1 - Math.pow(1-p, 2.5);
+function flap(strength){
+  if (reduceMotion()) return;
+  $("pointer").animate([{transform:"rotate("+(-10-strength*22)+"deg)"},{transform:"rotate(0deg)"}],{duration:110+strength*160,easing:"ease-out"});
+}
+const ease = p => 1 - Math.pow(1-p, 3);
 
 async function spin(){
   if (spinning) return;
-  spinning = true; $("spin").disabled = true; $("spin").textContent = "Spinning…";
+  spinning = true; browseN = null; document.body.classList.add("spinning");
   audio(); await loadTheme();
   const forced = window.__target;
   const target = (forced>=1 && forced<=100) ? forced-1 : Math.floor(Math.random()*100);
-  const want = 360 - (target + .2 + Math.random()*.6)*SEG;
+  const want = 360 - (target + .25 + Math.random()*.5)*SEG;
   const from = angle, delta = ((((want - from) % 360) + 360) % 360) + 360*TURNS;
   const dur = themeBuf ? themeEnd : (window.__spinSeconds || FALLBACK_SPIN);
   let clock, t0;
@@ -377,8 +439,14 @@ async function spin(){
     const p = Math.max(0, Math.min(1, (clock()-t0)/dur));
     angle = from + delta*ease(p);
     cv.style.transform = "rotate("+angle+"deg)";
+    drawLights("chase", Math.floor(angle/(360/BULBS)));
     const i = indexAt(angle);
-    if (i !== last){ last = i; setHub(i+1, "…"); const now = performance.now(); if (now-lastTick > 45){ lastTick = now; tick(); } }
+    if (i !== last){
+      last = i; setHub(i+1, "…");
+      const now = performance.now(), slow = Math.max(0,(p-.55)/.45);
+      if (now-lastTick > 45){ lastTick = now; tick(slow*slow); flap(slow);
+        if (slow > .5 && !reduceMotion()) $("hub").animate([{transform:"scale("+(1+slow*.12)+")"},{transform:"scale(1)"}],{duration:260,easing:"ease-out"}); }
+    }
     if (p < 1) requestAnimationFrame(frame); else landed(target+1);
   };
   requestAnimationFrame(frame);
@@ -386,34 +454,81 @@ async function spin(){
 function landed(n){
   angle = angle % 360;
   setHub(n, isSeen(n) ? "already seen" : "landed");
+  if (!reduceMotion()){
+    $("flash").animate([{opacity:0},{opacity:.95,offset:.15},{opacity:0}],{duration:900,easing:"ease-out"});
+    $("wheelbox").animate([{transform:"scale(1)"},{transform:"scale(1.035)",offset:.2},{transform:"scale(1)"}],{duration:500,easing:"ease-out"});
+  }
+  let f = 0; const fl = setInterval(() => { drawLights(f%2 ? "off" : "all", 0); if (++f > 6) clearInterval(fl); }, 140);
   setTimeout(() => {
-    spinning = false; $("spin").disabled = false; $("spin").textContent = "Spin the wheel";
+    spinning = false; document.body.classList.remove("spinning");
     if (isSeen(n)) seenSheet(n); else reveal(n);
-  }, 600);
+  }, 1100);
 }
 $("spin").onclick = spin; $("hub").onclick = spin;
 
-/* ---------- reveal ---------- */
-let menace = null;
-function reveal(n){
-  const ov = $("reveal"), sc = $("rv-scroll"), ul = $("rv-rows"), pick = $("rv-pick");
-  $("rv-eyebrow").textContent = "The wheel has spoken"; $("rv-big").textContent = "Number " + n;
-  ul.innerHTML = FILMS.map((_,i) => rowHTML(i+1,"li")).join("");
-  sc.classList.remove("done"); pick.hidden = true; ov.hidden = false; sc.scrollTop = 0;
-  const row = ul.children[n-1];
-  const end = row.offsetTop - sc.clientHeight/2 + row.offsetHeight/2;
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const dur = reduce ? 600 : (3500 + n*70), t0 = performance.now();
-  menace = startMenace();
-  const step = now => {
-    const p = Math.min(1, (now-t0)/dur), e = p<.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
-    sc.scrollTop = end*e; menace.beat(p);
-    if (p < 1) return requestAnimationFrame(step);
-    menace.stop(false); menace = null;
-    [n-1,n,n+1].forEach(k => { if (k>=1 && k<=100) ul.children[k-1].classList.add(k===n?"landed":"cand"); });
-    sc.classList.add("done"); showPick(n);
+/* hold and drag the wheel to browse */
+function showInfo(){
+  const el = $("info");
+  if (browseN == null){ el.innerHTML = '<span class="hint">Hold and drag the wheel to browse the films</span>'; el.disabled = true; return; }
+  const n = browseN; el.disabled = false;
+  el.innerHTML = '<span><span class="eyebrow">Number '+n+'</span><br><span class="ti">'+esc(title(n))+'</span> <span class="yr">'+year(n)+'</span></span>'+(statusHTML(n) || '<span class="meta">Not watched yet</span>');
+}
+$("info").onclick = () => { if (browseN != null) filmSheet(browseN); };
+(() => {
+  let prev = null;
+  const at = e => { const r = cv.getBoundingClientRect(); return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2))*180/Math.PI; };
+  const sync = () => {
+    cv.style.transform = "rotate("+angle+"deg)";
+    const n = indexAt(angle)+1;
+    if (n !== browseN){ browseN = n; tick(.15); flap(.2); setHub(n, isSeen(n) ? "seen" : "to watch"); showInfo(); }
   };
-  requestAnimationFrame(step);
+  cv.addEventListener("pointerdown", e => { if (spinning) return; audio(); cv.setPointerCapture(e.pointerId); prev = at(e); cv.style.cursor = "grabbing"; sync(); });
+  cv.addEventListener("pointermove", e => { if (prev == null || spinning) return; const a = at(e); let d = a-prev; if (d>180) d-=360; if (d<-180) d+=360; angle += d; prev = a; sync(); });
+  const end = () => { prev = null; cv.style.cursor = ""; };
+  cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
+})();
+
+/* ---------- reveal ---------- */
+let menace = null, revealRun = 0;
+const wait = ms => new Promise(r => setTimeout(r, ms));
+function reveal(n){
+  const run = ++revealRun, ov = $("reveal"), sc = $("rv-scroll"), ul = $("rv-rows"), pick = $("rv-pick"), dread = $("dread");
+  const say = (a,b) => { $("rv-eyebrow").textContent = a; $("rv-big").textContent = b; };
+  say("The wheel has spoken", "Number " + n);
+  ul.innerHTML = FILMS.map((_,i) => rowHTML(i+1,"li")).join("");
+  const cands = [n-1,n,n+1].filter(k => k>=1 && k<=100);
+  cands.forEach(k => ul.children[k-1].classList.add("veil"));   // hidden until the very end
+  sc.classList.remove("done"); pick.hidden = true; ov.hidden = false; sc.scrollTop = 0;
+  const row = ul.children[n-1], end = row.offsetTop - sc.clientHeight/2 + row.offsetHeight/2;
+  const quick = reduceMotion(), dur = quick ? 600 : (5200 + n*90), t0 = performance.now();
+  menace = startMenace(); const m = menace;
+  let tension = 0, looping = true;
+  const pulse = () => { if (!quick) dread.animate([{opacity:.15+tension*.55},{opacity:0}],{duration:520,easing:"ease-out"}); };
+  const loop = now => {
+    if (run !== revealRun || !looping) return;
+    const p = Math.min(1, (now-t0)/dur);
+    if (p < 1){ sc.scrollTop = end*(1-Math.pow(1-p,3)); tension = p*.8; }
+    if (m.beat(tension)) pulse();
+    requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+  (async () => {
+    await wait(dur); if (run !== revealRun) return;
+    sc.scrollTop = end; sc.classList.add("done"); ul.children[n-1].classList.add("landed");
+    cands.forEach(k => { if (k!==n) ul.children[k-1].classList.add("cand"); });
+    if (!quick){
+      tension = .88; await wait(1100); if (run !== revealRun) return;
+      if (n > 1){ say("One above", "Number " + (n-1)); ul.children[n-2].classList.remove("veil"); tension = .93; await wait(1700); if (run !== revealRun) return; }
+      if (n < 100){ say("One below", "Number " + (n+1)); ul.children[n].classList.remove("veil"); tension = 1; await wait(1900); if (run !== revealRun) return; }
+      say("And the wheel chose", "Number " + n);
+      looping = false; m.stop(.12);            // everything drops to silence…
+      await wait(1500); if (run !== revealRun) return;
+    } else { looping = false; m.stop(.2); cands.forEach(k => ul.children[k-1].classList.remove("veil")); }
+    ul.children[n-1].classList.remove("veil");  // …then the film
+    if (menace === m) menace = null;
+    await wait(quick ? 0 : 1500); if (run !== revealRun) return;
+    showPick(n);
+  })();
 }
 function showPick(n){
   const pick = $("rv-pick");
@@ -421,20 +536,20 @@ function showPick(n){
     if (k<1 || k>100) return "";
     const seen = isSeen(k), r = rating(k);
     return '<button class="opt'+(main?" main":"")+'" data-n="'+k+'"'+(seen?" disabled":"")+'><span><span class="k">'+label+' · #'+k+'</span><br><span class="ti">'+esc(title(k))+'</span> <span class="yr">'+year(k)+'</span></span>'+
-      (seen ? (r?stars(r):'<span class="go">Seen</span>') : '<span class="go">Watch</span>')+'</button>';
+      (seen ? (r?stars(r):'<span class="go">Seen</span>') : '<span class="go">Details</span>')+'</button>';
   };
-  pick.innerHTML = '<div class="eyebrow" style="text-align:center">Pick tonight\'s film</div>' + opt(n-1,"One above") + opt(n,"Landed on",true) + opt(n+1,"One below") +
+  pick.innerHTML = '<div class="eyebrow" style="text-align:center">Which one tonight?</div>' + opt(n-1,"One above") + opt(n,"Landed on",true) + opt(n+1,"One below") +
     '<button class="btn text" id="rv-again">Spin again instead</button>';
   pick.hidden = false;
   const sc = $("rv-scroll"), row = $("rv-rows").children[n-1];
   sc.scrollTop = row.offsetTop - sc.clientHeight/2 + row.offsetHeight/2;
-  pick.querySelectorAll(".opt").forEach(b => b.onclick = () => { S.current = +b.dataset.n; save(); closeReveal(); render(); toast("Tonight: " + title(S.current)); });
-  $("rv-again").onclick = () => { closeReveal(); };
+  pick.querySelectorAll(".opt").forEach(b => b.onclick = () => decideSheet(+b.dataset.n));
+  $("rv-again").onclick = closeReveal;
 }
-function closeReveal(){ if (menace){ menace.stop(false); menace=null; } $("reveal").hidden = true; }
+function closeReveal(){ revealRun++; if (menace){ menace.stop(.15); menace=null; } $("reveal").hidden = true; }
 
 /* ---------- sheets ---------- */
-function openSheet(html){ $("sheet").innerHTML = html; $("scrim").hidden = false; }
+function openSheet(html){ $("sheet").innerHTML = html; $("scrim").hidden = false; $("sheet").scrollTop = 0; }
 function closeSheet(){ $("scrim").hidden = true; }
 $("scrim").addEventListener("click", e => { if (e.target === $("scrim")) closeSheet(); });
 function seenSheet(n){
@@ -443,13 +558,21 @@ function seenSheet(n){
     '<div class="actions"><button class="btn primary block" id="sh-again">Spin again</button><button class="btn text" id="sh-close">Not now</button></div>');
   $("sh-again").onclick = () => { closeSheet(); spin(); }; $("sh-close").onclick = closeSheet;
 }
-function rateSheet(n){
+// After the reveal: read about the film, watch the trailer, then decide.
+function decideSheet(n){
+  openSheet('<div class="eyebrow">Number '+n+' · '+year(n)+'</div><h2>'+esc(title(n))+'</h2>'+aboutHTML(n)+
+    '<div class="actions"><button class="btn primary block" id="sh-yes">We\'re watching it</button><button class="btn text" id="sh-no">Not this one</button></div>');
+  $("sh-yes").onclick = () => { S.current = n; save(); closeSheet(); closeReveal(); render(); toast("Tonight: " + title(n)); };
+  $("sh-no").onclick = closeSheet;
+}
+// From the wheel or the list: about the film, plus rating.
+function filmSheet(n){
   const seen = isSeen(n); let val = rating(n) || 0;
-  openSheet('<div class="eyebrow">Number '+n+' · '+year(n)+'</div><h2>'+esc(title(n))+'</h2>'+
+  openSheet('<div class="eyebrow">Number '+n+' · '+year(n)+'</div><h2>'+esc(title(n))+'</h2>'+aboutHTML(n)+
     '<div class="rate"><div id="rate-stars" role="slider" tabindex="0" aria-label="Your rating" aria-valuemin="0" aria-valuemax="5"></div><div class="val" id="rate-val"></div></div>'+
     '<div class="actions"><button class="btn primary block" id="sh-save">Save rating</button>'+
     (seen ? '<button class="btn text danger" id="sh-unwatch">Mark as not watched</button>' : '<button class="btn text" id="sh-later">We\'ve seen it — rate later</button>')+
-    '<button class="btn text" id="sh-close">Cancel</button></div>');
+    '<button class="btn text" id="sh-close">Close</button></div>');
   const box = $("rate-stars");
   const paint = () => { box.innerHTML = stars(val); box.setAttribute("aria-valuenow", val); $("rate-val").textContent = val ? val+" / 5" : "Tap or slide to rate — half stars allowed"; $("sh-save").disabled = !val; };
   const fromX = x => { const el = box.firstElementChild.getBoundingClientRect(); val = Math.max(.5, Math.min(5, Math.ceil((x-el.left)/el.width*10)/2)); paint(); };
@@ -478,19 +601,19 @@ function render(){
   if (S.current) $("tonight-title").textContent = "#"+S.current+" "+title(S.current)+" ("+year(S.current)+")";
   $("rows").innerHTML = FILMS.map((_,i)=>i+1).filter(n => filter==="all" || (filter==="seen") === isSeen(n))
     .map(n => "<li>"+rowHTML(n,"button")+"</li>").join("");
-  drawWheel();
-  if (!spinning) setHub(100-ns.length, "left to watch");
+  drawWheel(); drawLights("idle", idlePhase); showInfo();
+  if (!spinning){ if (browseN != null) setHub(browseN, isSeen(browseN) ? "seen" : "to watch"); else setHub(100-ns.length, "left to watch"); }
 }
-$("rows").addEventListener("click", e => { const b = e.target.closest(".row"); if (b) rateSheet(+b.dataset.n); });
+$("rows").addEventListener("click", e => { const b = e.target.closest(".row"); if (b) filmSheet(+b.dataset.n); });
 document.querySelectorAll(".chip").forEach(c => c.onclick = () => { filter = c.dataset.f; document.querySelectorAll(".chip").forEach(x => x.setAttribute("aria-pressed", x===c)); render(); });
-$("tonight-rate").onclick = () => rateSheet(S.current);
+$("tonight-rate").onclick = () => filmSheet(S.current);
 function tab(name){
   $("view-wheel").hidden = name!=="wheel"; $("view-list").hidden = name!=="list";
   $("tab-wheel").setAttribute("aria-selected", name==="wheel"); $("tab-list").setAttribute("aria-selected", name==="list");
-  if (name==="wheel") drawWheel();
+  if (name==="wheel"){ drawWheel(); drawLights("idle", idlePhase); }
 }
 $("tab-wheel").onclick = () => tab("wheel"); $("tab-list").onclick = () => tab("list");
-window.addEventListener("resize", drawWheel);
+window.addEventListener("resize", () => { drawWheel(); drawLights("idle", idlePhase); });
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawWheel);
 setMute(false); render();
 })();
