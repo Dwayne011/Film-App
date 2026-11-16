@@ -74,7 +74,11 @@ body.spinning .chrome{opacity:0;pointer-events:none}
 .meta.gold{color:var(--gold)}
 /* Film rows */
 .listwrap{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column}
-.filters{display:flex;gap:8px;padding:12px 12px 8px;flex-wrap:wrap}
+.filters{display:flex;gap:8px;padding:10px 12px 0;overflow-x:auto;scrollbar-width:none;flex:none}
+.filters::-webkit-scrollbar{display:none}
+.filters .MuiChip-root{flex:none}
+.count{padding:8px 16px 6px;font-size:12.5px;color:var(--fg-dim);font-variant-numeric:tabular-nums}
+.rows .empty{padding:28px 16px;text-align:center;color:var(--fg-dim)}
 .rows{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 6px 8px;margin:0;list-style:none}
 .row{display:grid;grid-template-columns:40px minmax(0,1fr) auto;align-items:center;gap:10px;width:100%;text-align:left;
   min-height:56px;padding:8px 10px;border-radius:14px;font:inherit;color:inherit;border:0;background:none}
