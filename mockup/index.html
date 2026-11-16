@@ -86,7 +86,8 @@ body.spinning .chrome{opacity:0;pointer-events:none}
 .info{position:absolute;left:var(--gut);right:var(--gut);bottom:6px;z-index:4;min-height:52px;padding:8px 16px;border-radius:18px;
   display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;text-align:left;background:var(--sheet)}
 .info .ti{font-weight:700;overflow-wrap:anywhere}
-.info .hint{color:var(--fg-dim);font-size:13.5px;grid-column:1/-1;text-align:center}
+.info{transition:opacity .35s,transform .35s}
+.info.off{opacity:0;transform:translateY(10px);pointer-events:none}
 .yr{font-size:12.5px;color:var(--fg-dim);font-weight:400}
 .meta{font-size:12px;color:var(--fg-faint);text-align:right}
 /* Buttons */
@@ -161,6 +162,13 @@ button.row:active{background:var(--glass)}
 .sheet p{margin:0;color:var(--fg-dim)}
 .sheet p.syn{color:var(--fg);font-size:15.5px;line-height:1.5;text-align:left;text-wrap:pretty}
 .sheet .actions{display:flex;flex-direction:column;gap:6px}
+.setting{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;align-items:center;text-align:left;width:100%;padding:12px 14px;border-radius:16px;background:var(--glass);border:1px solid var(--glass-line)}
+.setting b{display:block;font-weight:700}
+.setting small{color:var(--fg-dim);font-size:13px}
+.switch{width:52px;height:32px;border-radius:99px;background:rgba(255,255,255,.2);position:relative;transition:background .2s;flex:none}
+.switch::after{content:"";position:absolute;left:4px;top:4px;width:24px;height:24px;border-radius:50%;background:var(--fg);transition:transform .2s}
+.setting[aria-checked="true"] .switch{background:var(--gold)}
+.setting[aria-checked="true"] .switch::after{transform:translateX(20px);background:var(--on-gold)}
 .rate{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0}
 .rate .stars{font-size:clamp(40px,13vw,54px);touch-action:none;cursor:pointer;gap:2px;border-radius:12px;padding:2px 6px}
 .rate .val{font-size:14px;font-weight:700;color:var(--fg-dim);font-variant-numeric:tabular-nums;min-height:20px}
@@ -176,7 +184,7 @@ button.row:active{background:var(--glass)}
       <h1>Film Wheel</h1>
       <div class="sub" id="stats"></div>
     </div>
-    <span class="badge">Mockup</span>
+        <button class="icon-btn" id="settings" aria-label="Settings"><svg viewBox="0 0 24 24"><path d="M19.14 12.94a7.07 7.07 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.61l-1.92-3.32a.5.5 0 0 0-.59-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.48-.41h-3.84a.5.5 0 0 0-.48.41l-.36 2.54a7 7 0 0 0-1.62.94l-2.39-.96a.5.5 0 0 0-.59.22L2.73 8.87a.5.5 0 0 0 .12.61l2.03 1.58a7.07 7.07 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.61l1.92 3.32c.12.22.37.3.59.22l2.39-.96c.5.38 1.04.7 1.62.94l.36 2.54c.05.24.25.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54a7 7 0 0 0 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.5.5 0 0 0-.12-.61l-2.03-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg></button>
     <button class="icon-btn" id="mute" aria-label="Mute sound" aria-pressed="false"></button>
   </header>
 
@@ -200,7 +208,7 @@ button.row:active{background:var(--glass)}
           <span class="cap" id="hub-cap">films</span>
         </button>
       </div>
-      <button class="info glass chrome" id="info"></button>
+      <button class="info glass chrome off" id="info"></button>
     </div>
     <button class="btn primary block chrome" id="spin">Spin the wheel</button>
   </section>
@@ -245,6 +253,8 @@ const FILMS = [["Parasite",2019],["Mulholland Drive",2001],["There Will Be Blood
 const SYN = ["A poor Seoul family cons its way into working for a wealthy household, until a secret in the basement upends everything.", "An aspiring actress arrives in Los Angeles and helps an amnesiac woman piece together who she is, in a dream that keeps curdling into a nightmare.", "A ruthless prospector builds an oil empire in turn-of-the-century California and locks horns with a young preacher.", "In 1960s Hong Kong, two neighbours realise their spouses are having an affair and drift into a restrained romance of their own.", "Three chapters in the life of a young Black man growing up in Miami as he comes to terms with who he is.", "A hunter stumbles on drug money in the Texas desert and is pursued by a relentless hitman, while an ageing sheriff follows the trail of bodies.", "After a painful break-up, a couple have each other erased from their memories. Halfway through, he changes his mind.", "A young Black man spends the weekend at his white girlfriend's family estate and uncovers something deeply sinister.", "A ten-year-old girl wanders into a world of spirits and must work in a bathhouse for the gods to free her parents.", "A Harvard student creates Facebook and is sued by the friends and rivals he left behind on the way up.", "In a desert wasteland, Max joins the rebel Furiosa as she flees a tyrant in an armoured war rig carrying his five wives.", "The commandant of Auschwitz and his wife build an idyllic family life in a house and garden beside the camp wall.", "In 2027, after two decades of human infertility, a jaded bureaucrat must escort a miraculously pregnant woman to safety.", "In Nazi-occupied France, a squad of Jewish-American soldiers and a cinema owner separately plot to kill the leaders of the Third Reich.", "Two boys grow up in a violent Rio de Janeiro favela. One becomes a photographer, the other a drug lord.", "A stolen sword draws two master warriors and a rebellious nobleman's daughter into a tale of love and duty in Qing-dynasty China.", "Two cowboys fall in love herding sheep in 1963 Wyoming and carry on a secret relationship for decades.", "Two teenage friends take a road trip across Mexico with an older woman and learn about sex, friendship and each other.", "A cartoonist, a reporter and a detective become obsessed with identifying the Zodiac killer terrorising 1970s San Francisco.", "The rise and fall of stockbroker Jordan Belfort, whose firm funded a life of fraud, drugs and excess.", "Three grown-up former child prodigies end up back under one roof when their estranged father announces he is dying.", "A legendary hotel concierge and his lobby boy are swept into a caper over a priceless painting and a family fortune between the wars.", "Filmed over twelve years with the same cast, the story of a boy growing up in Texas from the age of six to eighteen.", "A lonely writer in near-future Los Angeles falls in love with his artificially intelligent operating system.", "In 1950s London, a fastidious dressmaker's ordered life is upended by a strong-willed young woman who becomes his muse and lover.", "A writer stands trial over her husband's death at their Alpine chalet. Their blind son is the only witness.", "A screenwriter struggling to adapt a book about orchids writes himself, and his carefree twin brother, into the script.", "Batman faces the Joker, an anarchic criminal mastermind determined to drag Gotham into chaos.", "A linguist is recruited to communicate with the aliens whose ships have appeared around the world.", "A fading film star and a neglected young wife form an unlikely bond over a few sleepless days in Tokyo.", "An undercover cop infiltrates the Boston mob while a mob mole rises through the police. Each races to expose the other.", "A down-on-her-luck maid of honour battles a wealthy rival bridesmaid as her best friend's wedding plans spiral out of control.", "An Iranian couple's separation, and a dispute with the carer hired to look after his father, spiral into a tangle of accusations.", "A lonely waste-collecting robot on an abandoned Earth follows a sleek probe into space on an adventure that decides humanity's fate.", "A young man sent to a French prison rises through the ranks of the Corsican gang that controls it.", "In 1967 Minnesota, a physics professor seeks answers from three rabbis as his life quietly falls apart.", "In the summer of 1983 in northern Italy, a seventeen-year-old falls for the graduate student staying with his family.", "In 18th-century Brittany, a painter is hired to secretly paint the wedding portrait of a reluctant bride, and the two fall in love.", "A strong-willed Sacramento teenager clashes with her mother through her final year of high school.", "A year in the life of a middle-class Taipei family, seen through a father, his teenage daughter and his young son.", "A shy Parisian waitress secretly sets about improving the lives of the people around her, and finds love along the way.", "A troubled Second World War veteran drifts into the orbit of the charismatic leader of a new movement called The Cause.", "Locked in a room for fifteen years without explanation, a man is suddenly released and given five days to find out why.", "In 1969 Los Angeles, a fading TV actor and his stunt double navigate a changing Hollywood as the Manson family circles nearby.", "The Oakland A's general manager builds a competitive baseball team on a shoestring budget by trusting statistics over scouts.", "A year in the life of a live-in housekeeper for a middle-class family in early-1970s Mexico City.", "A fifteen-year-old lands a Rolling Stone assignment to tour with a rising rock band in 1973.", "In 1984 East Berlin, a Stasi officer assigned to spy on a playwright and his lover becomes absorbed in their lives.", "Nine years after their one night in Vienna, Jesse and Céline meet again in Paris with barely an hour before his flight.", "A widowed balloon salesman ties thousands of balloons to his house to fly to South America, with an accidental young stowaway.", "Solomon Northup, a free Black man from New York, is kidnapped in 1841 and sold into slavery in Louisiana.", "In early 18th-century England, two cousins compete for the affections of the frail Queen Anne.", "A Kazakh TV journalist travels across America to make a documentary, and to find Pamela Anderson.", "In 1944 Spain, a girl escapes the cruelty of her fascist stepfather into a dark fairy-tale world that sets her three tasks.", "A thief who steals secrets from dreams is offered a way home if he can plant an idea in someone's mind instead.", "A lonely, anxious novelty salesman falls in love while being extorted by a phone-sex line.", "A mockumentary following five sets of eccentric owners competing at a prestigious dog show.", "A New York jeweller and gambling addict stakes everything on a rare opal and a string of escalating bets.", "A prank-loving father invents an absurd alter ego to reconnect with his career-driven daughter.", "An ambitious young jazz drummer is pushed to breaking point by a ferocious conservatory teacher.", "A former assassin wakes from a four-year coma and sets out for revenge on the squad who betrayed her.", "A man who cannot form new memories uses tattoos and Polaroids to hunt for his wife's killer.", "A dysfunctional family crosses the country in a clapped-out VW bus to get their young daughter to a beauty pageant.", "When his wife disappears on their fifth anniversary, a husband becomes the prime suspect in the middle of a media frenzy.", "The story of J. Robert Oppenheimer, the physicist who led the creation of the atomic bomb, and what it cost him.", "Boston Globe journalists uncover the systematic cover-up of child abuse within the local Catholic Church.", "A world-famous conductor's career and life begin to unravel as accusations surface.", "A bomb disposal team in Iraq is put on edge by its new, recklessly fearless sergeant.", "An alien in the form of a woman drives around Scotland preying on lone men.", "A bullied twelve-year-old in 1980s Stockholm befriends the strange child next door, who only comes out at night.", "Danny Ocean assembles a crew to rob three Las Vegas casinos in a single night.", "In 1950s New York, a young department-store clerk falls for an older woman going through a difficult divorce.", "A rat with a gift for cooking teams up with a hapless kitchen boy at a famous Paris restaurant.", "A six-year-old spends a mischievous summer living in a budget motel in the shadow of Disney World while her mother struggles to get by.", "An elderly Parisian couple's bond is tested when one of them suffers a stroke.", "Three escaped convicts hunt for buried treasure in 1930s Mississippi in a comic riff on the Odyssey.", "A laundrette owner in the middle of a tax audit discovers she must connect with versions of herself across the multiverse to save it.", "A woman looks back on a holiday in Turkey she took with her young father twenty years earlier.", "A man reflects on his 1950s Texas childhood and his parents' opposing natures, set against the origins of the universe.", "A mother in Madrid copes with a death in her kitchen while her own late mother seemingly returns to settle unfinished business.", "A ballerina's grip on reality slips as she competes for the lead in Swan Lake.", "Former Indonesian death-squad leaders re-enact their mass killings in the style of their favourite films.", "A week in the life of a struggling folk singer in 1961 Greenwich Village.", "Two sisters' relationship is strained at a lavish wedding as a rogue planet heads towards Earth.", "San Diego's top 1970s newsreader has his world shaken when an ambitious woman joins the team.", "Two childhood friends from Seoul reunite in New York decades later and confront what might have been.", "A hobbit inherits a ring of terrible power and sets out with eight companions to destroy it.", "Agnès Varda travels France with a handheld camera, meeting people who gather what others leave behind.", "With Earth dying, a former pilot leaves his children to lead a mission through a wormhole in search of a new home.", "A twenty-seven-year-old dancer drifts between New York flats as her closest friendship and her ambitions shift.", "A volatile fifteen-year-old on an Essex estate finds her life changed when her mother brings home a new boyfriend.", "A betrayed Roman general, sold into slavery, rises as a gladiator to avenge his family.", "A law firm's fixer faces a crisis of conscience when a colleague has a breakdown over a corporate cover-up.", "In 2054, a cop in a unit that arrests murderers before they kill is himself accused of a future murder.", "Four years in the life of Julie, a young woman in Oslo navigating love and trying to work out who she is.", "T'Challa returns home to rule Wakanda and is challenged by an outsider with a claim to the throne.", "Two astronauts are stranded in orbit after debris destroys their shuttle.", "Werner Herzog examines the life and death of Timothy Treadwell, who spent thirteen summers living among Alaskan grizzlies.", "Two detectives with clashing methods hunt a serial killer in rural South Korea in the 1980s.", "Two inseparable friends try to buy alcohol for a party in their final weeks of high school."];
 // Your ratings so far. null = watched, no rating given yet.
 const SEED = {1:5,5:3,6:4.5,8:4,10:null,11:null,17:2.5,18:4,20:null,21:3,22:3.5,24:null,28:4.5,32:2.5,34:3.5,38:3.5,43:4,46:4,48:4,49:3,53:2,54:3,55:null,56:2,57:2,64:null,72:2.5,82:1.5,85:2,89:4.5,93:3,96:null,97:1,99:4.5};
+// Seconds into the theme where "The Wheel!" is sung (found by transcribing the track).
+const CUES = [12.76, 15.07, 19.74];
 const KEY = "filmwheel.mock.v1", SEG = 3.6, FALLBACK_SPIN = 22.5, TURNS = 14, BULBS = 72;
 const $ = id => document.getElementById(id);
 const title = n => FILMS[n-1][0], year = n => FILMS[n-1][1];
@@ -270,9 +280,18 @@ function statusHTML(n){
 function rowHTML(n, tag){
   return '<'+tag+' class="row'+(isSeen(n)?' seen':'')+(S.current===n?' now':'')+'" data-n="'+n+'"><span class="n">'+n+'</span><span><span class="ti">'+esc(title(n))+'</span> <span class="yr">'+year(n)+'</span></span>'+(statusHTML(n)||'<span></span>')+'</'+tag+'>';
 }
-const trailerURL = n => "https://www.youtube.com/results?search_query=" + encodeURIComponent(title(n)+" "+year(n)+" official trailer");
+const UA = navigator.userAgent, IS_ANDROID = /Android/i.test(UA), IS_IOS = /iPhone|iPad|iPod/i.test(UA) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const trailerWeb = n => "https://www.youtube.com/results?search_query=" + encodeURIComponent(title(n)+" "+year(n)+" official trailer");
+// Phones: hand the link straight to the YouTube app. Android falls back to the browser by itself if the app is missing.
+function trailerApp(n){
+  const web = trailerWeb(n), rest = web.slice("https://".length);
+  if (IS_ANDROID) return "intent://"+rest+"#Intent;scheme=https;package=com.google.android.youtube;S.browser_fallback_url="+encodeURIComponent(web)+";end";
+  if (IS_IOS) return "youtube://"+rest;
+  return web;
+}
 const PLAY = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
-const aboutHTML = n => '<p class="syn">'+esc(SYN[n-1])+'</p><a class="btn tonal block" href="'+trailerURL(n)+'" target="_blank" rel="noopener">'+PLAY+'Watch the trailer</a>';
+const aboutHTML = n => '<p class="syn">'+esc(SYN[n-1])+'</p><a class="btn tonal block" href="'+esc(trailerApp(n))+'" target="_blank" rel="noopener">'+PLAY+'Watch the trailer</a>'+
+  ((IS_ANDROID||IS_IOS) ? '<a class="btn text small" href="'+esc(trailerWeb(n))+'" target="_blank" rel="noopener">Open in the browser instead</a>' : '');
 
 /* ---------- audio ---------- */
 let ctx=null, master=null, themeBuf=null, themeEnd=0, themeLoading=null, muted=false;
@@ -309,6 +328,22 @@ function thud(t, vol){
   o.frequency.setValueAtTime(95,t); o.frequency.exponentialRampToValueAtTime(34,t+.22);
   g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(.0001,t+.3);
   o.connect(g).connect(master); o.start(t); o.stop(t+.32);
+}
+// "Ta-DAA!" brass stab for the moment the film is unveiled.
+function exclaim(){
+  if (!ctx) return; const t = ctx.currentTime, out = ctx.createGain(), lp = ctx.createBiquadFilter();
+  out.gain.value = .16; lp.type = "lowpass"; lp.Q.value = 1.2; lp.connect(out).connect(master);
+  lp.frequency.setValueAtTime(900,t); lp.frequency.exponentialRampToValueAtTime(5200,t+.3); lp.frequency.exponentialRampToValueAtTime(1400,t+1.5);
+  const chord = (freqs, at, len) => freqs.forEach((f,i) => [-5,5].forEach(det => {
+    const o = ctx.createOscillator(), g = ctx.createGain(); o.type = "sawtooth"; o.frequency.value = f; o.detune.value = det + i*2;
+    g.gain.setValueAtTime(0,at); g.gain.linearRampToValueAtTime(.5,at+.025); g.gain.setValueAtTime(.5,at+len*.55); g.gain.exponentialRampToValueAtTime(.0001,at+len);
+    o.connect(g).connect(lp); o.start(at); o.stop(at+len+.05); }));
+  chord([196,246.9,293.7,392], t, .16);                        // "ta"
+  chord([130.8,261.6,329.6,392,523.3,659.3], t+.2, 1.5);        // "DAA"
+  const n = ctx.createBufferSource(), nb = ctx.createBuffer(1, ctx.sampleRate*1.2, ctx.sampleRate), d = nb.getChannelData(0);
+  for (let i=0;i<d.length;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/d.length, 2.5);
+  const hp = ctx.createBiquadFilter(), ng = ctx.createGain(); hp.type = "highpass"; hp.frequency.value = 6000; ng.gain.value = .18;
+  n.buffer = nb; n.connect(hp).connect(ng).connect(master); n.start(t+.2);   // cymbal shimmer
 }
 // Menacing bed: low drone a semitone apart, a slow rising tone, and a heartbeat that quickens.
 function startMenace(){
@@ -419,13 +454,25 @@ function flap(strength){
   $("pointer").animate([{transform:"rotate("+(-10-strength*22)+"deg)"},{transform:"rotate(0deg)"}],{duration:110+strength*160,easing:"ease-out"});
 }
 const ease = p => 1 - Math.pow(1-p, 3);
+// The wheel jumps, flashes and lights up on each "The Wheel!"
+let hitUntil = 0;
+function wheelHit(){
+  hitUntil = performance.now() + 320;
+  if (reduceMotion()) return;
+  $("wheelbox").animate([{transform:"scale(1)"},{transform:"scale(1.1)",offset:.18},{transform:"scale(.985)",offset:.6},{transform:"scale(1)"}],{duration:620,easing:"ease-out"});
+  $("flash").animate([{opacity:0},{opacity:1,offset:.12},{opacity:0}],{duration:700,easing:"ease-out"});
+  $("hub").animate([{transform:"scale(1.25)"},{transform:"scale(1)"}],{duration:520,easing:"ease-out"});
+  document.querySelector(".beams").animate([{filter:"brightness(3.2)"},{filter:"brightness(1)"}],{duration:700,easing:"ease-out"});
+}
 
 async function spin(){
   if (spinning) return;
+  if (S.skipSeen && Object.keys(S.seen).length >= 100){ toast("You've watched all 100!"); return; }
   spinning = true; browseN = null; document.body.classList.add("spinning");
   audio(); await loadTheme();
   const forced = window.__target;
-  const target = (forced>=1 && forced<=100) ? forced-1 : Math.floor(Math.random()*100);
+  const pool = FILMS.map((_,i) => i).filter(i => !S.skipSeen || !isSeen(i+1));
+  const target = (forced>=1 && forced<=100) ? forced-1 : pool[Math.floor(Math.random()*pool.length)];
   const want = 360 - (target + .25 + Math.random()*.5)*SEG;
   const from = angle, delta = ((((want - from) % 360) + 360) % 360) + 360*TURNS;
   const dur = themeBuf ? themeEnd : (window.__spinSeconds || FALLBACK_SPIN);
@@ -434,12 +481,14 @@ async function spin(){
     const src = ctx.createBufferSource(); src.buffer = themeBuf; src.connect(master);
     t0 = ctx.currentTime + .06; src.start(t0); clock = () => ctx.currentTime;
   } else { t0 = performance.now()/1000; clock = () => performance.now()/1000; }
-  let last = -1, lastTick = 0;
+  let last = -1, lastTick = 0, cue = 0;
+  const cues = (themeBuf && ctx) ? CUES : (window.__cues || []);
   const frame = () => {
-    const p = Math.max(0, Math.min(1, (clock()-t0)/dur));
+    const el = clock()-t0, p = Math.max(0, Math.min(1, el/dur));
+    while (cue < cues.length && el >= cues[cue] - .03){ cue++; wheelHit(); }
     angle = from + delta*ease(p);
     cv.style.transform = "rotate("+angle+"deg)";
-    drawLights("chase", Math.floor(angle/(360/BULBS)));
+    drawLights(performance.now() < hitUntil ? "all" : "chase", Math.floor(angle/(360/BULBS)));
     const i = indexAt(angle);
     if (i !== last){
       last = i; setHub(i+1, "…");
@@ -469,22 +518,24 @@ $("spin").onclick = spin; $("hub").onclick = spin;
 /* hold and drag the wheel to browse */
 function showInfo(){
   const el = $("info");
-  if (browseN == null){ el.innerHTML = '<span class="hint">Hold and drag the wheel to browse the films</span>'; el.disabled = true; return; }
-  const n = browseN; el.disabled = false;
+  if (browseN == null){ el.classList.add("off"); return; }
+  const n = browseN; el.classList.remove("off");
   el.innerHTML = '<span><span class="eyebrow">Number '+n+'</span><br><span class="ti">'+esc(title(n))+'</span> <span class="yr">'+year(n)+'</span></span>'+(statusHTML(n) || '<span class="meta">Not watched yet</span>');
 }
 $("info").onclick = () => { if (browseN != null) filmSheet(browseN); };
 (() => {
-  let prev = null;
+  let prev = null, hideT;
   const at = e => { const r = cv.getBoundingClientRect(); return Math.atan2(e.clientY-(r.top+r.height/2), e.clientX-(r.left+r.width/2))*180/Math.PI; };
   const sync = () => {
     cv.style.transform = "rotate("+angle+"deg)";
     const n = indexAt(angle)+1;
     if (n !== browseN){ browseN = n; tick(.15); flap(.2); setHub(n, isSeen(n) ? "seen" : "to watch"); showInfo(); }
   };
-  cv.addEventListener("pointerdown", e => { if (spinning) return; audio(); cv.setPointerCapture(e.pointerId); prev = at(e); cv.style.cursor = "grabbing"; sync(); });
+  cv.addEventListener("pointerdown", e => { if (spinning) return; audio(); cv.setPointerCapture(e.pointerId); prev = at(e); cv.style.cursor = "grabbing"; clearTimeout(hideT); if (browseN != null) showInfo(); sync(); });
   cv.addEventListener("pointermove", e => { if (prev == null || spinning) return; const a = at(e); let d = a-prev; if (d>180) d-=360; if (d<-180) d+=360; angle += d; prev = a; sync(); });
-  const end = () => { prev = null; cv.style.cursor = ""; };
+  // The card lingers a few seconds after you let go (so you can tap it), then slips away.
+  const end = () => { if (prev == null) return; prev = null; cv.style.cursor = ""; clearTimeout(hideT);
+    hideT = setTimeout(() => { if (spinning) return; browseN = null; showInfo(); setHub(100-Object.keys(S.seen).length, "left to watch"); }, 4000); };
   cv.addEventListener("pointerup", end); cv.addEventListener("pointercancel", end);
 })();
 
@@ -525,6 +576,7 @@ function reveal(n){
       await wait(1500); if (run !== revealRun) return;
     } else { looping = false; m.stop(.2); cands.forEach(k => ul.children[k-1].classList.remove("veil")); }
     ul.children[n-1].classList.remove("veil");  // …then the film
+    exclaim();
     if (menace === m) menace = null;
     await wait(quick ? 0 : 1500); if (run !== revealRun) return;
     showPick(n);
@@ -588,6 +640,13 @@ function filmSheet(n){
   if (seen) $("sh-unwatch").onclick = () => { delete S.seen[n]; done(title(n)+" is back on the wheel"); };
   else $("sh-later").onclick = () => { S.seen[n] = null; done(title(n)+" marked as seen"); };
 }
+function settingsSheet(){
+  openSheet('<h2>Settings</h2><button class="setting" id="set-skip" role="switch" aria-checked="'+!!S.skipSeen+'"><span><b>Skip films we\'ve seen</b><small>The wheel only lands on films you haven\'t watched. Off: it can land on a seen film and you spin again.</small></span><span class="switch"></span></button>'+
+    '<div class="actions"><button class="btn text" id="sh-close">Done</button></div>');
+  $("set-skip").onclick = e => { S.skipSeen = !S.skipSeen; save(); e.currentTarget.setAttribute("aria-checked", S.skipSeen); };
+  $("sh-close").onclick = closeSheet;
+}
+$("settings").onclick = settingsSheet;
 let toastT;
 function toast(msg){ const t = $("toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600); }
 
