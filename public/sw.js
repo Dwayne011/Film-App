@@ -1,5 +1,5 @@
 // Minimal offline support: the app shell and the theme song are kept on the phone after the first visit.
-const CACHE = "film-wheel-v1";
+const CACHE = "film-wheel-v2";
 self.addEventListener("install", (e) => { self.skipWaiting(); });
 self.addEventListener("activate", (e) => {
   e.waitUntil(caches.keys().then((ks) => Promise.all(ks.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
@@ -12,7 +12,7 @@ self.addEventListener("fetch", (e) => {
     // cache first: these files never change under the same name
     e.respondWith(caches.open(CACHE).then(async (c) => (await c.match(e.request, { ignoreSearch: true })) || fetch(e.request).then((r) => { if (r.ok && r.status === 200) c.put(e.request, r.clone()); return r; })));
   } else {
-    // network first for the page itself, so updates arrive straight away
-    e.respondWith(fetch(e.request).then((r) => { if (r.ok) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); } return r; }).catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || caches.match("/"))));
+    // network first (skipping the phone's own cache) for the page and install file, so updates arrive straight away
+    e.respondWith(fetch(e.request, { cache: "no-store" }).then((r) => { if (r.ok) { const copy = r.clone(); caches.open(CACHE).then((c) => c.put(e.request, copy)); } return r; }).catch(() => caches.match(e.request, { ignoreSearch: true }).then((r) => r || caches.match("/"))));
   }
 });

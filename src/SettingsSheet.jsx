@@ -66,7 +66,7 @@ export default function SettingsSheet({ open, s, onClose, onToast }) {
           {tmdbReady(s.tmdb) && <span className="full"><Button variant="outlined" size="small" disabled={!!busy} onClick={sendAll}>{busy || "Send all ratings now"}</Button></span>}
         </div>
 
-        <p className="credit">Film details, posters and trailers come from The Movie Database (TMDB). This product uses the TMDB API but is not endorsed or certified by TMDB. The list is The New York Times' 100 Best Movies of the 21st Century.</p>
+        <p className="credit">Film details, posters and trailers come from The Movie Database (TMDB). This product uses the TMDB API but is not endorsed or certified by TMDB. The list is The New York Times' 100 Best Movies of the 21st Century.<br />Version: {__BUILD__}</p>
         <div className="actions"><Button variant="text" color="secondary" onClick={onClose}>Done</Button></div>
       </div>
     </Dialog>
