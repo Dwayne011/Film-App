@@ -1,13 +1,22 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import Switch from "@mui/material/Switch";
 import { CLOUD, inviteLink, leaveRoom, setSkipSeen } from "./store";
 import { pushAll, tmdbReady } from "./tmdb";
+import { IS_IOS } from "./films";
 
 export default function SettingsSheet({ open, s, onClose, onToast }) {
   const [busy, setBusy] = useState("");
   const [confirmLeave, setConfirmLeave] = useState(false);
+  const [canInstall, setCanInstall] = useState(!!window.__installPrompt);
+  useEffect(() => { const f = () => setCanInstall(!!window.__installPrompt); window.addEventListener("installable", f); return () => window.removeEventListener("installable", f); }, []);
+  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const install = async () => {
+    const p = window.__installPrompt; if (!p) return;
+    p.prompt(); try { await p.userChoice; } catch (e) {}
+    window.__installPrompt = null; setCanInstall(false);
+  };
   const copy = async () => {
     try { await navigator.clipboard.writeText(inviteLink()); onToast("Invite link copied"); }
     catch (e) { onToast("Couldn't copy. Press and hold the link to copy it."); }
@@ -42,6 +51,15 @@ export default function SettingsSheet({ open, s, onClose, onToast }) {
           <div className="setting"><span className="full"><b>Saved on this device only</b><small>Sharing between phones isn't switched on yet.</small></span></div>
         )}
 
+        {!standalone && (
+          <div className="setting">
+            <span className="full"><b>Install on this phone</b>
+              <small>{canInstall ? "Adds Film Wheel to your home screen and opens it full screen, like an app."
+                : IS_IOS ? "In Safari, tap the Share button, then \"Add to Home Screen\"."
+                : "If there's no Install button here, open this page in Chrome, tap the ⋮ menu, then \"Add to Home screen\" or \"Install app\"."}</small></span>
+            {canInstall && <span className="full"><Button variant="contained" size="small" onClick={install}>Install app</Button></span>}
+          </div>
+        )}
         <div className="setting">
           <span className="full"><b>The Movie Database</b>
             <small>{tmdbReady(s.tmdb) ? "Connected. Each rating you save is also sent to your account on themoviedb.org, doubled to their 10-point scale." : "Not connected. Ratings stay in this app."}</small></span>

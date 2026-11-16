@@ -3,6 +3,7 @@
 import { useSyncExternalStore } from "react";
 import { firebaseConfig } from "./firebaseConfig";
 import { SEED } from "./seed";
+import { IS_IOS } from "./films";
 import { pushRating, tmdbReady } from "./tmdb";
 
 const LS_STATE = "filmwheel.v1", LS_ROOM = "filmwheel.room";
@@ -41,6 +42,11 @@ async function firebase() {
 const roomPath = (code) => "filmwheel/rooms/" + code;
 const fromDb = (seen) => { const out = {}; for (const k in seen || {}) out[+k.slice(1)] = seen[k] || null; return out; };
 const cacheKey = (code) => LS_STATE + "." + code;
+// iPhone only: keep the invite code in the address so "Add to Home Screen" saves it (see main.jsx).
+function keepCodeInAddress(code) {
+  if (!IS_IOS) return;
+  try { const u = new URL(location.href); if (u.searchParams.get("room") !== code) { u.searchParams.set("room", code); history.replaceState(null, "", u); } } catch (e) {}
+}
 export const validCode = (c) => /^[A-Za-z0-9]{20,40}$/.test(c || "");
 export function newCode() {
   const abc = "abcdefghjkmnpqrstuvwxyz23456789", a = new Uint8Array(24); crypto.getRandomValues(a);
@@ -58,6 +64,7 @@ export async function joinRoom(code) {
     if (!snap.exists()) { lsSet(LS_ROOM, null); lsSet(cacheKey(code), null); set({ status: "notfound", room: null }); return; }
     const v = snap.val(), next = { seen: fromDb(v.seen), current: v.current ?? null, skipSeen: !!v.skipSeen };
     lsSet(LS_ROOM, code); lsSet(cacheKey(code), JSON.stringify(next));
+    keepCodeInAddress(code);
     set({ status: "ready", room: code, ...next, tmdb: v.tmdb || null });
   }, () => set({ status: "error" }));
 }
