@@ -1,0 +1,8 @@
+node_modules
+dist
+.firebase
+*.log
+.env*.local
+# The theme song is copyrighted, so it is deployed with the app but never committed.
+public/wheel-theme.mp3
+mockup/wheel-theme.mp3
