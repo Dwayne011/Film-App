@@ -33,3 +33,13 @@ Film Wheel: a private film-night app for the owner and their wife, working throu
 ## The theme song is not in this repo
 
 `public/wheel-theme.mp3` (the BBC "The Wheel" theme) is copyrighted and this repo is public, so the file is git-ignored. It must be present in `public/` before `npm run build` and deploy, otherwise the wheel spins silently for 22.5 seconds. If it is missing in a fresh checkout, ask the owner to upload it again. The spin length and the "The Wheel!" cue times in `src/wheelEngine.js` are measured from that exact file.
+
+## Android app (APK)
+
+Chrome on the owner's phone (Android 17 developer preview) would not offer to install the site as a web app, so `android/` holds a small Android app that shows the live site full screen in a WebView. The website does all the work; web updates reach the app without rebuilding it.
+
+- Build with `ANDROID_SDK=<sdk> ROOM=<invite code> KEYSTORE=<file> android/build.sh FilmWheel.apk` (no Gradle; needs `platforms;android-35` and `build-tools;35.0.0`).
+- `ROOM` bakes the private invite code into the APK so it opens straight onto the owner's wheel. APKs and keystores are git-ignored and must never be committed.
+- The app adds `FilmWheelApp/1` to its browser name; the site checks for it (`IN_APP` in `src/films.js`) to hide the install prompt and to open trailers with plain YouTube links, which the app hands to the YouTube app.
+- The signing key was not kept. A rebuilt APK will have a different signature, so the owner must uninstall the old app before installing a new one. Nothing is lost: ratings live in the database.
+- It has never been run on a device or emulator by Claude; only the owner's phone can confirm it works.

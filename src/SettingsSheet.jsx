@@ -4,14 +4,14 @@ import Dialog from "@mui/material/Dialog";
 import Switch from "@mui/material/Switch";
 import { CLOUD, inviteLink, leaveRoom, setSkipSeen } from "./store";
 import { pushAll, tmdbReady } from "./tmdb";
-import { IS_IOS } from "./films";
+import { IN_APP, IS_IOS } from "./films";
 
 export default function SettingsSheet({ open, s, onClose, onToast }) {
   const [busy, setBusy] = useState("");
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [canInstall, setCanInstall] = useState(!!window.__installPrompt);
   useEffect(() => { const f = () => setCanInstall(!!window.__installPrompt); window.addEventListener("installable", f); return () => window.removeEventListener("installable", f); }, []);
-  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  const standalone = IN_APP || matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   // Facts about this phone's browser, shown in Settings to help work out why install isn't offered.
   const [sw, setSw] = useState("checking…");
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function SettingsSheet({ open, s, onClose, onToast }) {
     navigator.serviceWorker.getRegistration().then((r) => setSw(r && r.active ? (navigator.serviceWorker.controller ? "active" : "active, not yet controlling this page") : r ? "still installing" : "not registered")).catch(() => setSw("blocked"));
   }, [open]);
   const ua = navigator.userAgent, chrome = (ua.match(/Chrome\/(\d+)/) || [])[1];
-  const browser = /; wv\)/.test(ua) ? "an in-app browser (not Chrome itself)" : /EdgA|SamsungBrowser|OPR|Firefox|DuckDuckGo/.test(ua) ? "not Chrome: " + (ua.match(/EdgA|SamsungBrowser|OPR|Firefox|DuckDuckGo/) || [""])[0] : chrome ? "Chrome " + chrome : "unknown";
+  const browser = IN_APP ? "the Film Wheel Android app" : /; wv\)/.test(ua) ? "an in-app browser (not Chrome itself)" : /EdgA|SamsungBrowser|OPR|Firefox|DuckDuckGo/.test(ua) ? "not Chrome: " + (ua.match(/EdgA|SamsungBrowser|OPR|Firefox|DuckDuckGo/) || [""])[0] : chrome ? "Chrome " + chrome : "unknown";
   const checks = [
     ["Version", __BUILD__],
     ["Browser", browser],

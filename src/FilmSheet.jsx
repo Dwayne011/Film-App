@@ -4,7 +4,7 @@ import Button from "@mui/material/Button";
 import Dialog from "@mui/material/Dialog";
 import Rating from "@mui/material/Rating";
 import PlayArrowRounded from "@mui/icons-material/PlayArrowRounded";
-import { film, posterURL, trailerApp, trailerWeb, IS_ANDROID, IS_IOS } from "./films";
+import { film, posterURL, trailerApp, trailerWeb, IN_APP, IS_ANDROID, IS_IOS } from "./films";
 import { Stars } from "./Stars";
 
 const has = (seen, n) => Object.prototype.hasOwnProperty.call(seen, n);
@@ -25,7 +25,7 @@ function About({ n }) {
       <p className="syn">{f.overview}</p>
       <div className="actions">
         <Button variant="outlined" fullWidth startIcon={<PlayArrowRounded />} href={trailerApp(n)} target="_blank" rel="noopener">Watch the trailer</Button>
-        {(IS_ANDROID || IS_IOS) && <Button variant="text" color="secondary" size="small" href={trailerWeb(n)} target="_blank" rel="noopener">Open in the browser instead</Button>}
+        {(IS_ANDROID || IS_IOS) && !IN_APP && <Button variant="text" color="secondary" size="small" href={trailerWeb(n)} target="_blank" rel="noopener">Open in the browser instead</Button>}
       </div>
     </>
   );
