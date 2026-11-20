@@ -27,7 +27,7 @@ export default function WheelView({ visible, s, onLanded, onOpenFilm, onToast })
   const spin = () => engine.current.spin();
   const b = browseN && film(browseN);
   return (
-    <section className="view" hidden={!visible}>
+    <section className="view wheelview" hidden={!visible}>
       {s.current && (
         <Paper className="tonight chrome">
           <div className="grow">
@@ -61,7 +61,7 @@ export default function WheelView({ visible, s, onLanded, onOpenFilm, onToast })
           )}
         </button>
       </div>
-      <Button className="chrome" variant="contained" fullWidth onClick={spin}>Spin the wheel</Button>
+      <Button className="chrome spinbtn" variant="contained" fullWidth onClick={spin}>Spin the wheel</Button>
     </section>
   );
 }

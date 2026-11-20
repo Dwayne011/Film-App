@@ -5,6 +5,7 @@ import IconButton from "@mui/material/IconButton";
 import Paper from "@mui/material/Paper";
 import Snackbar from "@mui/material/Snackbar";
 import SvgIcon from "@mui/material/SvgIcon";
+import useMediaQuery from "@mui/material/useMediaQuery";
 import FormatListNumberedRounded from "@mui/icons-material/FormatListNumberedRounded";
 import SettingsRounded from "@mui/icons-material/SettingsRounded";
 import VolumeOffRounded from "@mui/icons-material/VolumeOffRounded";
@@ -33,6 +34,8 @@ export default function App() {
   const [toast, setToast] = useState("");
   const [muted, setMuted] = useState(() => { try { return localStorage.getItem(MUTE_KEY) === "1"; } catch (e) { return false; } });
 
+  // Desktop and laptop screens: the whole wheel and the list sit side by side, with no tabs.
+  const wide = useMediaQuery("(min-width:960px) and (min-height:540px)");
   useEffect(() => { onNotice(setToast); start(); }, []);
   useEffect(() => { A.setMuted(muted); try { localStorage.setItem(MUTE_KEY, muted ? "1" : "0"); } catch (e) {} }, [muted]);
 
@@ -47,7 +50,7 @@ export default function App() {
     <>
       <div className="beams" aria-hidden="true" />
       <div className="whiteout" aria-hidden="true" />
-      <div className="app">
+      <div className={"app" + (wide ? " wide" : "")}>
         <Paper component="header" className="bar chrome">
           <div className="grow">
             <h1>Film Wheel</h1>
@@ -57,15 +60,17 @@ export default function App() {
           <IconButton aria-label={muted ? "Unmute sound" : "Mute sound"} aria-pressed={muted} onClick={() => setMuted(!muted)}>{muted ? <VolumeOffRounded /> : <VolumeUpRounded />}</IconButton>
         </Paper>
 
-        <WheelView key="wheel" visible={tab === "wheel"} s={s}
+        <div className="main">
+        <WheelView key="wheel" visible={wide || tab === "wheel"} s={s}
           onLanded={(n, seen) => (seen ? setSheet({ mode: "seen", n }) : setRevealN(n))}
           onOpenFilm={(n) => setSheet({ mode: "film", n })} onToast={setToast} />
-        <ListView visible={tab === "list"} s={s} onOpenFilm={(n) => setSheet({ mode: "film", n })} />
+        <ListView visible={wide || tab === "list"} s={s} onOpenFilm={(n) => setSheet({ mode: "film", n })} />
+        </div>
 
-        <BottomNavigation className="chrome" showLabels value={tab} onChange={(e, v) => setTab(v)}>
+        {!wide && <BottomNavigation className="chrome" showLabels value={tab} onChange={(e, v) => setTab(v)}>
           <BottomNavigationAction value="wheel" label="Wheel" icon={<WheelIcon />} />
           <BottomNavigationAction value="list" label="The 100" icon={<FormatListNumberedRounded />} />
-        </BottomNavigation>
+        </BottomNavigation>}
       </div>
 
       {revealN && <Reveal n={revealN} seen={s.seen} onChoose={(k) => setSheet({ mode: "decide", n: k })} onClose={() => setRevealN(null)} />}

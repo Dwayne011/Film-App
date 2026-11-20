@@ -1,5 +1,10 @@
 import { useState } from "react";
 import Chip from "@mui/material/Chip";
+import IconButton from "@mui/material/IconButton";
+import InputAdornment from "@mui/material/InputAdornment";
+import TextField from "@mui/material/TextField";
+import ClearRounded from "@mui/icons-material/ClearRounded";
+import SearchRounded from "@mui/icons-material/SearchRounded";
 import Paper from "@mui/material/Paper";
 import { FILMS } from "./films";
 import { Status } from "./Stars";
@@ -16,6 +21,17 @@ const RATINGS = [
   ["none", "Not rated yet", (r) => !r],
 ];
 const SORTS = [["list", "List order"], ["high", "Highest rated first"], ["low", "Lowest rated first"]];
+// Search ignores capitals, accents and punctuation, so "amelie" finds Amélie and "walle" finds WALL·E.
+const plain = (t) => t.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+const squash = (t) => plain(t).replace(/ /g, "");
+const INDEX = FILMS.map((f) => ({ words: plain(f.title), tight: squash(f.title) }));
+// Matches a title, a list number ("47") or a year ("2007").
+function matches(f, q) {
+  const p = plain(q); if (!p) return true;
+  if (/^\d+$/.test(p) && (String(f.n) === p || String(f.year) === p)) return true;
+  const ix = INDEX[f.n - 1];
+  return p.split(" ").every((w) => ix.words.includes(w)) || ix.tight.includes(squash(q));
+}
 const on = { bgcolor: "#f4f5ff", color: "#0a0e2c", "&:hover": { bgcolor: "#f4f5ff" } };
 const off = { color: "text.secondary", borderColor: "rgba(255,255,255,.22)" };
 
@@ -33,6 +49,7 @@ export default function ListView({ visible, s, onOpenFilm }) {
   const [filter, setFilter] = useState("all");
   const [rating, setRating] = useState("any");
   const [sort, setSort] = useState("list");
+  const [query, setQuery] = useState("");
   const test = RATINGS.find((r) => r[0] === rating)[2];
   // A rating filter or a rating sort only makes sense for films you've watched, so "To watch" clears them.
   const pickFilter = (k) => { setFilter(k); if (k === "todo") { setRating("any"); setSort("list"); } };
@@ -40,6 +57,7 @@ export default function ListView({ visible, s, onOpenFilm }) {
   const pickSort = (k) => { setSort(k); if (k !== "list" && filter === "todo") setFilter("seen"); };
 
   let rows = FILMS.filter((f) => {
+    if (!matches(f, query)) return false;
     const seen = has(s.seen, f.n);
     if (filter !== "all" && (filter === "seen") !== seen) return false;
     if (rating !== "any") return seen && test(s.seen[f.n]);
@@ -57,13 +75,24 @@ export default function ListView({ visible, s, onOpenFilm }) {
   }
   return (
     <section className="view" hidden={!visible}>
-      <Paper className="listwrap">
+      <Paper className="listwrap chrome">
+        <div className="search">
+          <TextField id="film-search" type="search" placeholder="Search films by name, number or year" value={query} onChange={(e) => setQuery(e.target.value)}
+            fullWidth size="small" autoComplete="off"
+            slotProps={{
+              htmlInput: { "aria-label": "Search films", enterKeyHint: "search" },
+              input: {
+                startAdornment: <InputAdornment position="start"><SearchRounded fontSize="small" /></InputAdornment>,
+                endAdornment: query ? <InputAdornment position="end"><IconButton aria-label="Clear search" size="small" onClick={() => setQuery("")} sx={{ width: 32, height: 32 }}><ClearRounded fontSize="small" /></IconButton></InputAdornment> : null,
+              },
+            }} />
+        </div>
         <Chips label="Show" options={FILTERS} value={filter} onPick={pickFilter} />
         <Chips label="Filter by our rating" options={RATINGS} value={rating} onPick={pickRating} />
         <Chips label="Sort" options={SORTS} value={sort} onPick={pickSort} />
         <div className="count">{rows.length} {rows.length === 1 ? "film" : "films"}</div>
         <ul className="rows">
-          {rows.length === 0 && <li className="empty">No films match. Try a different rating.</li>}
+          {rows.length === 0 && <li className="empty">{query.trim() ? (filter !== "all" || rating !== "any" ? "No films match that search with these filters. Try \"All 100\" and \"Any rating\"." : "No films match that search.") : "No films match. Try a different rating."}</li>}
           {rows.map((f) => (
             <li key={f.n}>
               <button className={"row" + (has(s.seen, f.n) ? " seen" : "") + (s.current === f.n ? " now" : "")} onClick={() => onOpenFilm(f.n)}>

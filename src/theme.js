@@ -45,7 +45,7 @@ export const theme = createTheme({
     MuiChip: { styleOverrides: { root: { height: 36, borderRadius: 99, fontSize: 13, fontWeight: 500 } } },
     MuiDialog: {
       styleOverrides: {
-        container: { alignItems: "flex-end" },
+        container: { alignItems: "flex-end", "@media (min-width:960px) and (min-height:540px)": { alignItems: "center" } },
         paper: { ...glass, backgroundColor: "rgba(24,26,66,.82)", borderRadius: 28, margin: 16, width: "100%", maxWidth: 488, maxHeight: "calc(100% - 32px)" },
       },
     },
